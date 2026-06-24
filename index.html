@@ -2,7 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Coater Calc" />
 <title>Coater Calc</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -39,13 +43,18 @@
     background:var(--bg);
     color:var(--ink);
     font-family:'Inter', sans-serif;
-    min-height:100vh;
+    height:100%;
+    overflow:hidden; /* the body itself never scrolls/bounces */
   }
 
   .app{
     max-width:980px;
     margin:0 auto;
     padding:32px 20px 50px;
+    height:100vh;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+    overscroll-behavior-y:contain; /* stops the rubber-band bounce that exits fullscreen */
   }
 
   header{
@@ -163,6 +172,22 @@
     font-weight:500;
     margin:-8px 0 16px;
   }
+
+  .fs-banner{
+    display:none;
+    position:fixed;
+    top:0; left:0; right:0;
+    z-index:999;
+    background:var(--indigo);
+    color:#fff;
+    text-align:center;
+    font-family:'Inter', sans-serif;
+    font-weight:600;
+    font-size:13.5px;
+    padding:10px;
+    cursor:pointer;
+  }
+  .fs-banner.show{ display:block; }
 
   h2.section-title{
     font-family:'Poppins', sans-serif;
@@ -529,6 +554,7 @@
 <body>
 
 <div class="app">
+  <div class="fs-banner" id="fsRecoverBanner">⛶ Tap to return to full screen</div>
   <header>
     <div>
       <h1>Coater Calc</h1>
@@ -758,22 +784,48 @@
 
   function setupFullscreen(){
     const btn = document.getElementById('fullscreenBtn');
+    const banner = document.getElementById('fsRecoverBanner');
     if (!document.documentElement.requestFullscreen && !document.documentElement.webkitRequestFullscreen){
       btn.style.display = 'none'; // not supported on this device/browser
       return;
     }
+
+    let intentionalExit = false;
+    let wasFullscreen = false;
+
+    function enterFullscreen(){
+      const el = document.documentElement;
+      return (el.requestFullscreen || el.webkitRequestFullscreen).call(el).catch(() => {});
+    }
+    function exitFullscreen(){
+      intentionalExit = true;
+      return (document.exitFullscreen || document.webkitExitFullscreen).call(document).catch(() => {});
+    }
+
     btn.addEventListener('click', () => {
       const isFs = document.fullscreenElement || document.webkitFullscreenElement;
-      if (!isFs){
-        const el = document.documentElement;
-        (el.requestFullscreen || el.webkitRequestFullscreen).call(el).catch(() => {});
-      } else {
-        (document.exitFullscreen || document.webkitExitFullscreen).call(document).catch(() => {});
-      }
+      if (!isFs) enterFullscreen();
+      else exitFullscreen();
     });
+
+    banner.addEventListener('click', () => {
+      banner.classList.remove('show');
+      enterFullscreen();
+    });
+
     const updateLabel = () => {
-      const isFs = document.fullscreenElement || document.webkitFullscreenElement;
+      const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
       btn.textContent = isFs ? '⛶ Exit full screen' : '⛶ Full screen';
+
+      if (isFs){
+        wasFullscreen = true;
+        banner.classList.remove('show');
+      } else if (wasFullscreen && !intentionalExit){
+        // Dropped out of fullscreen on its own (an iOS gesture, not our button) — offer one tap back in.
+        banner.classList.add('show');
+      }
+      wasFullscreen = isFs;
+      intentionalExit = false;
     };
     document.addEventListener('fullscreenchange', updateLabel);
     document.addEventListener('webkitfullscreenchange', updateLabel);
