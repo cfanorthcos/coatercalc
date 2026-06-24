@@ -792,6 +792,8 @@
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') requestWakeLock();
   });
+
+  function setupSettings(){
     const toggle = document.getElementById('settingsToggle');
     const panel = document.getElementById('settingsPanel');
     const forecastInput = document.getElementById('forecastUrlInput');
