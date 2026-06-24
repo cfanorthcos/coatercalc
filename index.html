@@ -157,6 +157,13 @@
   .sync-status.error{ color:var(--coral-text); }
   .sync-status.success{ color:var(--green-text); }
 
+  .last-synced{
+    font-size:11.5px;
+    color:var(--ink-dim);
+    font-weight:500;
+    margin:-8px 0 16px;
+  }
+
   h2.section-title{
     font-family:'Poppins', sans-serif;
     font-weight:600;
@@ -527,7 +534,10 @@
       <h1>Coater Calc</h1>
       <div class="sub">Bags needed by daypart</div>
     </div>
-    <button class="settings-btn" id="settingsToggle">⚙ Sheet sync</button>
+    <div style="display:flex; gap:8px;">
+      <button class="settings-btn" id="resetDayBtn">↻ Reset day</button>
+      <button class="settings-btn" id="settingsToggle">⚙ Sheet sync</button>
+    </div>
   </header>
 
   <div class="settings-panel" id="settingsPanel">
@@ -554,6 +564,7 @@
       <button class="sync-btn" id="syncBtn">↻ Sync forecast from sheet</button>
       <div class="sync-status" id="syncStatus"></div>
     </div>
+    <div class="last-synced" id="lastSyncedLabel"></div>
     <div class="rail" id="rail"></div>
   </div>
 
@@ -572,7 +583,7 @@
 (function(){
   const REG_DIV = 1483;
   const SPI_DIV = 5592;
-  const STORAGE_KEY = 'coater_state_v10';
+  const STORAGE_KEY = 'coater_state_v13';
 
   const DAYPART_NAMES = ['Breakfast', 'Lunch', 'Afternoon', 'Dinner'];
 
@@ -605,7 +616,57 @@
     forecastUrl: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQxLpWL9qPe2VzW1ePMGsB2k87iyD2J-dgxq92S93oX8iB9wIkxNYl44L7q30grUJoEqT3FIYhBkFlD/pub?gid=0&single=true&output=csv',
     complianceUrl: 'https://script.google.com/macros/s/AKfycbzTExr7gbLCWBG-S_n4RP55-eNYEm3pF8NnH6sddMBRJljhOa2DkGm5QnbFXo68oiJM/exec'
   };
+  let lastResetDate = '';
+  let lastSyncedAt = null;
   let saveTimer = null;
+
+  function todayStr(){
+    const d = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  }
+
+  // Business day resets at 5:00 AM Mountain Time, regardless of the device's local timezone.
+  function getMountainParts(date){
+    const fmt = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Denver',
+      year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', hour12:false
+    });
+    const obj = {};
+    fmt.formatToParts(date).forEach(p => { if (p.type !== 'literal') obj[p.type] = p.value; });
+    return {
+      year:+obj.year, month:+obj.month, day:+obj.day,
+      hour: obj.hour === '24' ? 0 : +obj.hour, minute:+obj.minute
+    };
+  }
+
+  function operatingDayStr(){
+    const p = getMountainParts(new Date());
+    // Anchor at UTC noon so date-only arithmetic never gets shifted by DST.
+    const anchor = new Date(Date.UTC(p.year, p.month - 1, p.day, 12, 0, 0));
+    if (p.hour < 5){
+      anchor.setUTCDate(anchor.getUTCDate() - 1);
+    }
+    const y = anchor.getUTCFullYear();
+    const m = String(anchor.getUTCMonth() + 1).padStart(2, '0');
+    const d = String(anchor.getUTCDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
+  function freshCaterDefaults(){
+    return {
+      quickForecast:'',
+      filetSold:'', spicySold:'',
+      nuggetsSm:'', nuggetsMd:'', nuggetsLg:'', nuggetsUnits:'',
+      stripsSm:'', stripsMd:'', stripsLg:'', stripsUnits:''
+    };
+  }
+
+  function resetDailyData(){
+    state = {};
+    caterState = freshCaterDefaults();
+    lastResetDate = operatingDayStr();
+  }
 
   // ---------- sheet sync helpers ----------
   function parseCsv(text){
@@ -639,6 +700,14 @@
     return isFinite(n) ? n : 0;
   }
 
+  function renderLastSynced(){
+    const el = document.getElementById('lastSyncedLabel');
+    if (!el) return;
+    el.textContent = lastSyncedAt
+      ? `Last synced ${fmtTime(lastSyncedAt)}`
+      : 'Not synced yet';
+  }
+
   async function syncForecast(){
     const statusEl = document.getElementById('syncStatus');
     if (!settings.forecastUrl){
@@ -664,6 +733,8 @@
         }
       });
       renderAllDayparts();
+      lastSyncedAt = Date.now();
+      renderLastSynced();
       scheduleSave();
       statusEl.textContent = matched
         ? `Synced ${matched} daypart${matched === 1 ? '' : 's'} just now`
@@ -703,6 +774,17 @@
     });
 
     document.getElementById('syncBtn').addEventListener('click', syncForecast);
+
+    document.getElementById('resetDayBtn').addEventListener('click', () => {
+      const ok = window.confirm('Reset all sales, sign-offs, and extra-bag entries for today? This cannot be undone.');
+      if (!ok) return;
+      resetDailyData();
+      renderAllDayparts();
+      renderQuickForecast();
+      renderCateringSheet();
+      save();
+      syncForecast();
+    });
   }
 
   function ensureDaypart(name){
@@ -1152,7 +1234,7 @@
 
   async function save(){
     try{
-      await window.storage.set(STORAGE_KEY, JSON.stringify({ state, caterState, settings }));
+      await window.storage.set(STORAGE_KEY, JSON.stringify({ state, caterState, settings, lastResetDate, lastSyncedAt }));
     }catch(err){
       console.error('Save failed', err);
     }
@@ -1167,14 +1249,38 @@
           if (parsed.state) state = parsed.state;
           if (parsed.caterState) caterState = Object.assign(caterState, parsed.caterState);
           if (parsed.settings) settings = Object.assign(settings, parsed.settings);
+          if (parsed.lastResetDate) lastResetDate = parsed.lastResetDate;
+          if (parsed.lastSyncedAt) lastSyncedAt = parsed.lastSyncedAt;
         }
       }
     }catch(err){
       // keep defaults
     }
+
+    if (lastResetDate !== operatingDayStr()){
+      resetDailyData();
+      await save();
+      await syncForecast();
+    }
   }
 
-  load().then(renderAll);
+  function checkAndResetIfNeeded(){
+    if (lastResetDate !== operatingDayStr()){
+      resetDailyData();
+      renderAllDayparts();
+      renderQuickForecast();
+      renderCateringSheet();
+      save();
+      syncForecast();
+    }
+  }
+
+  load().then(() => {
+    renderAll();
+    renderLastSynced();
+    // Catches the 5am Mountain Time rollover on devices/tablets left open overnight.
+    setInterval(checkAndResetIfNeeded, 60000);
+  });
 })();
 </script>
 
