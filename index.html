@@ -387,6 +387,27 @@
     outline-offset:1px;
   }
 
+  .stepper-row{
+    display:flex;
+    gap:6px;
+    align-items:stretch;
+  }
+  .stepper-row input{ flex:1; min-width:0; }
+  .stepper-btn{
+    background:var(--indigo-soft);
+    border:none;
+    color:var(--indigo-dark);
+    font-weight:700;
+    font-size:14px;
+    width:38px;
+    flex-shrink:0;
+    border-radius:10px;
+    cursor:pointer;
+  }
+  .stepper-btn:hover{ background:#E0E0FB; }
+  .stepper-btn:active{ transform:scale(0.95); }
+  .stepper-btn:focus-visible{ outline:2px solid var(--indigo); outline-offset:1px; }
+
   .reason-field{ margin-bottom:9px; }
 
   .reason-options{
@@ -610,11 +631,11 @@
 (function(){
   const REG_DIV = 1483;
   const SPI_DIV = 5592;
-  const STORAGE_KEY = 'coater_state_v13';
+  const STORAGE_KEY = 'coater_state_v15';
 
   const DAYPART_NAMES = ['Breakfast', 'Lunch', 'Afternoon', 'Dinner'];
 
-  const REASON_OPTIONS = ['More sales than expected', 'Catering', 'Other'];
+  const REASON_OPTIONS = ['Ran out', 'More sales than expected', 'Catering', 'Other'];
 
   // ---- catering cheat sheet config ----
   // bags = units * usage * 8, rounded to nearest 0.1
@@ -632,7 +653,7 @@
   const rail = document.getElementById('rail');
   const caterGrid = document.getElementById('caterGrid');
 
-  let state = {}; // { "Breakfast": { sales, confirmed:{name,time}|null, extraReg, extraSpi, reasonType, reason, extraOpen, extraConfirmed:{name,time}|null }, ... }
+  let state = {}; // { "Breakfast": { sales, confirmed:{name,time}|null, extraReg, extraSpi, reasonType, reason, extraOpen, extras:[{reg,spi,reason,name,time}] }, ... }
   let caterState = {
     quickForecast:'',
     filetSold:'', spicySold:'',
@@ -882,9 +903,10 @@
       state[name] = {
         sales:'', confirmed:null,
         extraReg:'', extraSpi:'', reasonType:'', reason:'',
-        extraOpen:false, extraConfirmed:null
+        extraOpen:false, extras:[]
       };
     }
+    if (!state[name].extras) state[name].extras = [];
     return state[name];
   }
 
@@ -1024,33 +1046,35 @@
 
   function renderExtraBlock(wrap, name){
     const dp = ensureDaypart(name);
+    if (!dp.extras) dp.extras = [];
 
-    if (dp.extraConfirmed){
-      const r = parseInt(dp.extraReg,10) || 0;
-      const s = parseInt(dp.extraSpi,10) || 0;
+    const entriesHtml = dp.extras.map((entry, idx) => {
       const parts = [];
-      if (r > 0) parts.push(`+${r} regular`);
-      if (s > 0) parts.push(`+${s} spicy`);
-      wrap.innerHTML = `
-        <div class="confirmed-state">
-          <div class="txt">✓ ${parts.join(' · ')} confirmed by ${escapeHtml(dp.extraConfirmed.name)}
-            <span class="when">· ${fmtTime(dp.extraConfirmed.time)}</span>
-            ${dp.reason ? `<span class="extra-note">${escapeHtml(dp.reason)}</span>` : ''}
+      if (entry.reg > 0) parts.push(`+${entry.reg} regular`);
+      if (entry.spi > 0) parts.push(`+${entry.spi} spicy`);
+      return `
+        <div class="confirmed-state" style="margin-bottom:6px;" data-idx="${idx}">
+          <div class="txt">✓ ${escapeHtml(parts.join(' · '))} confirmed by ${escapeHtml(entry.name)}
+            <span class="when">· ${fmtTime(entry.time)}</span>
+            ${entry.reason ? `<span class="extra-note">${escapeHtml(entry.reason)}</span>` : ''}
           </div>
-          <button class="change-link">Change</button>
+          <button class="change-link remove-extra-btn" data-idx="${idx}">Remove</button>
         </div>
       `;
-      wrap.querySelector('.change-link').addEventListener('click', () => {
-        dp.extraConfirmed = null;
-        dp.extraOpen = true;
-        renderExtraBlock(wrap, name);
-        scheduleSave();
-      });
-      return;
-    }
+    }).join('');
 
     if (!dp.extraOpen){
-      wrap.innerHTML = `<button class="toggle-link">+ Need more bags than allocated?</button>`;
+      wrap.innerHTML = `
+        ${entriesHtml}
+        <button class="toggle-link">${dp.extras.length ? '+ Add another extra-bag entry' : '+ Need more bags than allocated?'}</button>
+      `;
+      wrap.querySelectorAll('.remove-extra-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          dp.extras.splice(parseInt(btn.dataset.idx, 10), 1);
+          renderExtraBlock(wrap, name);
+          scheduleSave();
+        });
+      });
       wrap.querySelector('.toggle-link').addEventListener('click', () => {
         dp.extraOpen = true;
         renderExtraBlock(wrap, name);
@@ -1062,18 +1086,25 @@
     const isOther = dp.reasonType === 'Other';
 
     wrap.innerHTML = `
+      ${entriesHtml}
       <div class="extra-head">
-        <div class="sub-label">Extra bags taken</div>
+        <div class="sub-label">${dp.extras.length ? 'Add another entry' : 'Extra bags taken'}</div>
         <button class="collapse-link">Collapse</button>
       </div>
       <div class="extra-grid">
         <div class="mini-field">
           <label>Extra regular</label>
-          <input type="number" class="extraRegInput" min="0" step="1" placeholder="0" value="${dp.extraReg || ''}" />
+          <div class="stepper-row">
+            <input type="number" class="extraRegInput" min="0" step="1" placeholder="0" value="${dp.extraReg || ''}" />
+            <button type="button" class="stepper-btn" data-target="extraRegInput">+1</button>
+          </div>
         </div>
         <div class="mini-field">
           <label>Extra spicy</label>
-          <input type="number" class="extraSpiInput" min="0" step="1" placeholder="0" value="${dp.extraSpi || ''}" />
+          <div class="stepper-row">
+            <input type="number" class="extraSpiInput" min="0" step="1" placeholder="0" value="${dp.extraSpi || ''}" />
+            <button type="button" class="stepper-btn" data-target="extraSpiInput">+1</button>
+          </div>
         </div>
       </div>
       <div class="reason-field">
@@ -1091,6 +1122,14 @@
         <button class="confirm-btn">Confirm</button>
       </div>
     `;
+
+    wrap.querySelectorAll('.remove-extra-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        dp.extras.splice(parseInt(btn.dataset.idx, 10), 1);
+        renderExtraBlock(wrap, name);
+        scheduleSave();
+      });
+    });
 
     wrap.querySelector('.collapse-link').addEventListener('click', () => {
       dp.extraOpen = false;
@@ -1123,6 +1162,16 @@
     extraSpiInput.addEventListener('input', (e) => { dp.extraSpi = e.target.value; scheduleSave(); });
     extraSignoffName.addEventListener('input', (e) => { dp.extraPendingName = e.target.value; scheduleSave(); });
 
+    wrap.querySelectorAll('.stepper-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const target = wrap.querySelector(`.${btn.dataset.target}`);
+        if (!target) return;
+        const current = parseInt(target.value, 10) || 0;
+        target.value = current + 1;
+        target.dispatchEvent(new Event('input', { bubbles: true }));
+      });
+    });
+
     confirmBtn.addEventListener('click', () => {
       const nameVal = extraSignoffName.value.trim();
       const r = parseInt(extraRegInput.value, 10) || 0;
@@ -1133,10 +1182,17 @@
       if (!dp.reasonType) { return; }
       if (dp.reasonType === 'Other' && !dp.reason) { if (customInput) customInput.focus(); return; }
 
-      dp.extraReg = extraRegInput.value;
-      dp.extraSpi = extraSpiInput.value;
-      dp.extraConfirmed = { name: nameVal, time: Date.now() };
+      const reasonText = dp.reason || '';
+
+      dp.extras.push({ reg: r, spi: s, reason: reasonText, name: nameVal, time: Date.now() });
+
+      // reset the draft fields and close the form, ready for another entry if needed
+      dp.extraReg = '';
+      dp.extraSpi = '';
+      dp.reasonType = '';
+      dp.reason = '';
       delete dp.extraPendingName;
+      dp.extraOpen = false;
 
       renderExtraBlock(wrap, name);
       scheduleSave();
@@ -1147,7 +1203,7 @@
         name: nameVal,
         regularBags: r,
         spicyBags: s,
-        reason: dp.reason || ''
+        reason: reasonText
       });
     });
   }
