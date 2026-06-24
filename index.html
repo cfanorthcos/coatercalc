@@ -534,7 +534,8 @@
       <h1>Coater Calc</h1>
       <div class="sub">Bags needed by daypart</div>
     </div>
-    <div style="display:flex; gap:8px;">
+    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+      <button class="settings-btn" id="fullscreenBtn">⛶ Full screen</button>
       <button class="settings-btn" id="resetDayBtn">↻ Reset day</button>
       <button class="settings-btn" id="settingsToggle">⚙ Sheet sync</button>
     </div>
@@ -755,7 +756,42 @@
     }).catch(() => { /* best-effort; sign-off still stands locally even if logging fails */ });
   }
 
-  function setupSettings(){
+  function setupFullscreen(){
+    const btn = document.getElementById('fullscreenBtn');
+    if (!document.documentElement.requestFullscreen && !document.documentElement.webkitRequestFullscreen){
+      btn.style.display = 'none'; // not supported on this device/browser
+      return;
+    }
+    btn.addEventListener('click', () => {
+      const isFs = document.fullscreenElement || document.webkitFullscreenElement;
+      if (!isFs){
+        const el = document.documentElement;
+        (el.requestFullscreen || el.webkitRequestFullscreen).call(el).catch(() => {});
+      } else {
+        (document.exitFullscreen || document.webkitExitFullscreen).call(document).catch(() => {});
+      }
+    });
+    const updateLabel = () => {
+      const isFs = document.fullscreenElement || document.webkitFullscreenElement;
+      btn.textContent = isFs ? '⛶ Exit full screen' : '⛶ Full screen';
+    };
+    document.addEventListener('fullscreenchange', updateLabel);
+    document.addEventListener('webkitfullscreenchange', updateLabel);
+  }
+
+  let wakeLock = null;
+  async function requestWakeLock(){
+    try{
+      if ('wakeLock' in navigator){
+        wakeLock = await navigator.wakeLock.request('screen');
+      }
+    }catch(err){
+      // unsupported, or device declined (e.g. low battery) — fail silently
+    }
+  }
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') requestWakeLock();
+  });
     const toggle = document.getElementById('settingsToggle');
     const panel = document.getElementById('settingsPanel');
     const forecastInput = document.getElementById('forecastUrlInput');
@@ -1084,6 +1120,7 @@
   function renderAll(){
     setupTabs();
     setupSettings();
+    setupFullscreen();
     renderQuickForecast();
     renderAllDayparts();
     renderCateringSheet();
@@ -1278,6 +1315,7 @@
   load().then(() => {
     renderAll();
     renderLastSynced();
+    requestWakeLock();
     // Catches the 5am Mountain Time rollover on devices/tablets left open overnight.
     setInterval(checkAndResetIfNeeded, 60000);
   });
