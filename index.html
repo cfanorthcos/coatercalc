@@ -990,7 +990,7 @@
       <div class="sub-label">Sign off — I took the correct amount</div>
       <div class="signoff-row">
         <div class="mini-field">
-          <input type="text" class="signoffName" placeholder="Enter your name" value="${escapeHtml(dp.pendingName || '')}" />
+          <input type="text" class="signoffName" placeholder="Initials" maxlength="6" value="${escapeHtml(dp.pendingName || '')}" />
         </div>
         <button class="confirm-btn">Confirm</button>
       </div>
@@ -1086,7 +1086,7 @@
       <div class="sub-label">Sign off — extra bags taken</div>
       <div class="signoff-row">
         <div class="mini-field">
-          <input type="text" class="extraSignoffName" placeholder="Enter your name" value="${escapeHtml(dp.extraPendingName || '')}" />
+          <input type="text" class="extraSignoffName" placeholder="Initials" maxlength="6" value="${escapeHtml(dp.extraPendingName || '')}" />
         </div>
         <button class="confirm-btn">Confirm</button>
       </div>
