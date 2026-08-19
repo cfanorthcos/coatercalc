@@ -12,582 +12,135 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#F6F6FC;
-    --card:#FFFFFF;
-    --line:#ECEBF5;
-    --ink:#2E2B4D;
-    --ink-dim:#8E8AA8;
-
-    --indigo:#5B5FEF;
-    --indigo-soft:#EDEDFD;
-    --indigo-dark:#4347D1;
-
-    --blue:#3B82F6;
-    --blue-soft:#DCEAFE;
-    --blue-text:#1D4ED8;
-
-    --coral:#F2545B;
-    --coral-soft:#FFE3E3;
-    --coral-text:#C23A40;
-
-    --green:#2EC27E;
-    --green-soft:#E3F8EE;
-    --green-text:#1F8F5C;
+    --bg:#F6F6FC; --card:#FFFFFF; --line:#ECEBF5; --ink:#2E2B4D; --ink-dim:#8E8AA8;
+    --indigo:#5B5FEF; --indigo-soft:#EDEDFD; --indigo-dark:#4347D1;
+    --blue:#3B82F6; --blue-soft:#DCEAFE; --blue-text:#1D4ED8;
+    --coral:#F2545B; --coral-soft:#FFE3E3; --coral-text:#C23A40;
+    --green:#2EC27E; --green-soft:#E3F8EE; --green-text:#1F8F5C;
   }
-
   *{ box-sizing:border-box; }
-
-  html,body{
-    margin:0;
-    padding:0;
-    background:var(--bg);
-    color:var(--ink);
-    font-family:'Inter', sans-serif;
-    height:100%;
-    overflow:hidden; /* the body itself never scrolls/bounces */
-  }
-
-  .app{
-    max-width:980px;
-    margin:0 auto;
-    padding:32px 20px 50px;
-    height:100vh;
-    overflow-y:auto;
-    -webkit-overflow-scrolling:touch;
-    overscroll-behavior-y:contain; /* stops the rubber-band bounce that exits fullscreen */
-  }
-
-  header{
-    margin-bottom:22px;
-    display:flex;
-    align-items:baseline;
-    justify-content:space-between;
-    flex-wrap:wrap;
-    gap:6px;
-  }
-
-  header h1{
-    font-family:'Poppins', sans-serif;
-    font-weight:700;
-    font-size:26px;
-    margin:0;
-    color:var(--ink);
-  }
-
-  header .sub{
-    font-size:13.5px;
-    color:var(--ink-dim);
-    font-weight:500;
-  }
-
-  .settings-btn{
-    background:var(--indigo-soft);
-    border:none;
-    color:var(--indigo-dark);
-    font-size:12.5px;
-    font-weight:600;
-    padding:8px 13px;
-    border-radius:10px;
-    cursor:pointer;
-  }
+  html,body{ margin:0; padding:0; background:var(--bg); color:var(--ink); font-family:'Inter',sans-serif; height:100%; overflow:hidden; }
+  .app{ max-width:980px; margin:0 auto; padding:32px 20px 50px; height:100vh; overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior-y:contain; }
+  header{ margin-bottom:22px; display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:6px; }
+  header h1{ font-family:'Poppins',sans-serif; font-weight:700; font-size:26px; margin:0; color:var(--ink); }
+  header .sub{ font-size:13.5px; color:var(--ink-dim); font-weight:500; }
+  .settings-btn{ background:var(--indigo-soft); border:none; color:var(--indigo-dark); font-size:12.5px; font-weight:600; padding:8px 13px; border-radius:10px; cursor:pointer; }
   .settings-btn:hover{ background:#E0E0FB; }
-
-  .settings-panel{
-    background:var(--card);
-    border-radius:14px;
-    padding:16px;
-    margin-bottom:20px;
-    box-shadow:0 2px 14px rgba(46,43,77,0.06);
-    display:none;
-  }
+  .settings-panel{ background:var(--card); border-radius:14px; padding:16px; margin-bottom:20px; box-shadow:0 2px 14px rgba(46,43,77,0.06); display:none; }
   .settings-panel.open{ display:block; }
-
   .settings-panel .field{ margin-bottom:10px; }
-  .settings-panel label{
-    display:block;
-    font-size:11.5px;
-    font-weight:600;
-    color:var(--ink-dim);
-    margin-bottom:5px;
-  }
-  .settings-panel input[type="text"]{
-    width:100%;
-    background:var(--bg);
-    border:none;
-    border-radius:10px;
-    padding:9px 11px;
-    font-family:'Inter', sans-serif;
-    font-size:13.5px;
-    color:var(--ink);
-  }
+  .settings-panel label{ display:block; font-size:11.5px; font-weight:600; color:var(--ink-dim); margin-bottom:5px; }
+  .settings-panel input[type="text"]{ width:100%; background:var(--bg); border:none; border-radius:10px; padding:9px 11px; font-family:'Inter',sans-serif; font-size:13.5px; color:var(--ink); }
   .settings-panel input:focus-visible{ outline:2px solid var(--indigo); outline-offset:1px; }
-  .settings-panel .hint{
-    font-size:11.5px;
-    color:var(--ink-dim);
-    margin-top:8px;
-    line-height:1.5;
-  }
-  .settings-save{
-    background:var(--indigo);
-    color:#fff;
-    border:none;
-    font-weight:600;
-    font-size:13px;
-    padding:9px 16px;
-    border-radius:10px;
-    cursor:pointer;
-    margin-top:4px;
-  }
+  .settings-panel .hint{ font-size:11.5px; color:var(--ink-dim); margin-top:8px; line-height:1.5; }
+  .settings-save{ background:var(--indigo); color:#fff; border:none; font-weight:600; font-size:13px; padding:9px 16px; border-radius:10px; cursor:pointer; margin-top:4px; }
   .settings-save:hover{ background:var(--indigo-dark); }
-
-  .sync-row{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:10px;
-    margin-bottom:16px;
-  }
-  .sync-btn{
-    background:var(--card);
-    border:1.5px solid var(--line);
-    color:var(--ink);
-    font-weight:600;
-    font-size:13px;
-    padding:9px 14px;
-    border-radius:10px;
-    cursor:pointer;
-  }
+  .sync-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:16px; }
+  .sync-btn{ background:var(--card); border:1.5px solid var(--line); color:var(--ink); font-weight:600; font-size:13px; padding:9px 14px; border-radius:10px; cursor:pointer; }
   .sync-btn:hover{ border-color:var(--indigo); color:var(--indigo); }
-  .sync-status{
-    font-size:12px;
-    color:var(--ink-dim);
-    font-weight:500;
-  }
+  .sync-status{ font-size:12px; color:var(--ink-dim); font-weight:500; }
   .sync-status.error{ color:var(--coral-text); }
   .sync-status.success{ color:var(--green-text); }
-
-  .last-synced{
-    font-size:11.5px;
-    color:var(--ink-dim);
-    font-weight:500;
-    margin:-8px 0 16px;
-  }
-
-  .fs-banner{
-    display:none;
-    position:fixed;
-    top:0; left:0; right:0;
-    z-index:999;
-    background:var(--indigo);
-    color:#fff;
-    text-align:center;
-    font-family:'Inter', sans-serif;
-    font-weight:600;
-    font-size:13.5px;
-    padding:10px;
-    cursor:pointer;
-  }
+  .last-synced{ font-size:11.5px; color:var(--ink-dim); font-weight:500; margin:-8px 0 16px; }
+  .fs-banner{ display:none; position:fixed; top:0; left:0; right:0; z-index:999; background:var(--indigo); color:#fff; text-align:center; font-family:'Inter',sans-serif; font-weight:600; font-size:13.5px; padding:10px; cursor:pointer; }
   .fs-banner.show{ display:block; }
-
-  h2.section-title{
-    font-family:'Poppins', sans-serif;
-    font-weight:600;
-    font-size:18px;
-    color:var(--ink);
-    margin:34px 0 6px;
-  }
-
-  .section-sub{
-    font-size:13px;
-    color:var(--ink-dim);
-    font-weight:500;
-    margin-bottom:14px;
-  }
-
-  /* ---------- tabs ---------- */
-  .tabs{
-    display:flex;
-    gap:22px;
-    border-bottom:1px solid var(--line);
-    margin-bottom:22px;
-    overflow-x:auto;
-  }
-
-  .tab-btn{
-    background:none;
-    border:none;
-    padding:10px 2px 12px;
-    font-family:'Poppins', sans-serif;
-    font-weight:600;
-    font-size:14.5px;
-    color:var(--ink-dim);
-    cursor:pointer;
-    position:relative;
-    white-space:nowrap;
-    flex-shrink:0;
-  }
+  .save-banner{ display:none; position:fixed; top:0; left:0; right:0; z-index:1000; background:var(--coral-text); color:#fff; text-align:center; font-family:'Inter',sans-serif; font-weight:600; font-size:13px; padding:10px 16px; }
+  .save-banner.show{ display:block; }
+  .field-error{ display:flex; align-items:center; gap:5px; color:var(--coral-text); font-size:12.5px; font-weight:600; margin:2px 0 10px; }
+  .field-error::before{ content:'⚠'; font-size:12px; }
+  .invalid input, input.invalid{ box-shadow:0 0 0 2px var(--coral) inset; }
+  .invalid.reason-options{ box-shadow:0 0 0 2px var(--coral) inset; border-radius:12px; padding:4px; margin:-4px -4px 4px; }
+  .shake{ animation:shake 0.32s; }
+  @keyframes shake{ 10%,90%{transform:translateX(-1px);} 20%,80%{transform:translateX(2px);} 30%,50%,70%{transform:translateX(-3px);} 40%,60%{transform:translateX(3px);} }
+  button:focus-visible, .reason-chip:focus-visible{ outline:2px solid var(--indigo); outline-offset:2px; }
+  .section-sub{ font-size:13px; color:var(--ink-dim); font-weight:500; margin-bottom:14px; }
+  .tabs{ display:flex; gap:22px; border-bottom:1px solid var(--line); margin-bottom:22px; overflow-x:auto; }
+  .tab-btn{ background:none; border:none; padding:10px 2px 12px; font-family:'Poppins',sans-serif; font-weight:600; font-size:14.5px; color:var(--ink-dim); cursor:pointer; position:relative; white-space:nowrap; flex-shrink:0; }
   .tab-btn:hover{ color:var(--ink); }
   .tab-btn.active{ color:var(--indigo); }
-  .tab-btn.active::after{
-    content:'';
-    position:absolute;
-    left:0; right:0; bottom:-1px;
-    height:2.5px;
-    background:var(--indigo);
-    border-radius:2px;
-  }
-
+  .tab-btn.active::after{ content:''; position:absolute; left:0; right:0; bottom:-1px; height:2.5px; background:var(--indigo); border-radius:2px; }
   .tab-panel{ display:none; }
   .tab-panel.active{ display:block; }
-
-  .rail{
-    display:grid;
-    grid-template-columns:repeat(auto-fit, minmax(230px, 1fr));
-    gap:16px;
-  }
-
-  .ticket{
-    background:var(--card);
-    border-radius:18px;
-    padding:18px;
-    box-shadow:0 2px 14px rgba(46,43,77,0.06);
-  }
-
-  .ticket-name{
-    font-family:'Poppins', sans-serif;
-    font-weight:600;
-    font-size:17px;
-    color:var(--ink);
-    margin-bottom:12px;
-  }
-
-  .sales-row{
-    display:flex;
-    align-items:center;
-    gap:5px;
-    padding:9px 12px;
-    background:var(--bg);
-    border-radius:12px;
-    margin-bottom:12px;
-  }
-
-  .sales-row .dollar{
-    font-weight:600;
-    color:var(--ink-dim);
-    font-size:15px;
-  }
-
-  .sales-input{
-    background:transparent;
-    border:none;
-    font-family:'Inter', sans-serif;
-    font-weight:600;
-    font-size:16px;
-    color:var(--ink);
-    width:100%;
-    padding:1px 0;
-  }
+  .rail{ display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:16px; }
+  .ticket{ background:var(--card); border-radius:18px; padding:18px; box-shadow:0 2px 14px rgba(46,43,77,0.06); }
+  .ticket-name{ font-family:'Poppins',sans-serif; font-weight:600; font-size:17px; color:var(--ink); margin-bottom:12px; }
+  .sales-row{ display:flex; align-items:center; gap:5px; padding:9px 12px; background:var(--bg); border-radius:12px; margin-bottom:12px; }
+  .sales-row .dollar{ font-weight:600; color:var(--ink-dim); font-size:15px; }
+  .sales-input{ background:transparent; border:none; font-family:'Inter',sans-serif; font-weight:600; font-size:16px; color:var(--ink); width:100%; padding:1px 0; }
   .sales-input:focus-visible{ outline:none; }
   .sales-input::placeholder{ color:#C7C4DC; }
-
-  .results{
-    display:flex;
-    gap:8px;
-    margin-bottom:14px;
-  }
-
-  .result{
-    flex:1;
-    border-radius:12px;
-    padding:9px 10px;
-    text-align:center;
-  }
+  .results{ display:flex; gap:8px; margin-bottom:14px; }
+  .result{ flex:1; border-radius:12px; padding:9px 10px; text-align:center; }
   .result.reg{ background:var(--blue-soft); }
   .result.spi{ background:var(--coral-soft); }
-
-  .result .value{
-    font-family:'Poppins', sans-serif;
-    font-weight:700;
-    font-size:22px;
-    line-height:1.1;
-  }
+  .result .value{ font-family:'Poppins',sans-serif; font-weight:700; font-size:22px; line-height:1.1; }
   .result.reg .value{ color:var(--blue-text); }
   .result.spi .value{ color:var(--coral-text); }
-
-  .result .label-txt{
-    font-size:11px;
-    font-weight:600;
-    color:var(--ink-dim);
-    margin-top:1px;
-  }
-
-  .divider{
-    border-top:1px solid var(--line);
-    margin:12px 0;
-  }
-
-  .sub-label{
-    font-size:12.5px;
-    font-weight:600;
-    color:var(--ink-dim);
-    margin-bottom:7px;
-  }
-
+  .result .label-txt{ font-size:11px; font-weight:600; color:var(--ink-dim); margin-top:1px; }
+  .divider{ border-top:1px solid var(--line); margin:12px 0; }
+  .sub-label{ font-size:12.5px; font-weight:600; color:var(--ink-dim); margin-bottom:7px; }
   .extra-block{ margin-top:12px; }
-
-  .extra-head{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    margin-bottom:7px;
-  }
+  .extra-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:7px; }
   .extra-head .sub-label{ margin-bottom:0; }
-
-  .collapse-link{
-    background:none;
-    border:none;
-    color:var(--ink-dim);
-    font-size:12px;
-    font-weight:600;
-    text-decoration:underline;
-    cursor:pointer;
-    padding:2px;
-  }
+  .collapse-link{ background:none; border:none; color:var(--ink-dim); font-size:12px; font-weight:600; text-decoration:underline; cursor:pointer; padding:2px; }
   .collapse-link:hover{ color:var(--ink); }
-
-  .extra-grid{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:8px;
-    margin-bottom:9px;
-  }
-
-  .mini-field label{
-    display:block;
-    font-size:11px;
-    font-weight:600;
-    color:var(--ink-dim);
-    margin-bottom:4px;
-  }
-
-  .mini-field input{
-    width:100%;
-    background:var(--bg);
-    border:none;
-    border-radius:10px;
-    padding:9px 11px;
-    font-family:'Inter', sans-serif;
-    font-size:14px;
-    font-weight:500;
-    color:var(--ink);
-  }
+  .extra-grid{ display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:9px; }
+  .mini-field label{ display:block; font-size:11px; font-weight:600; color:var(--ink-dim); margin-bottom:4px; }
+  .mini-field input{ width:100%; background:var(--bg); border:none; border-radius:10px; padding:9px 11px; font-family:'Inter',sans-serif; font-size:14px; font-weight:500; color:var(--ink); }
   .mini-field input::placeholder{ color:#C7C4DC; }
-  .mini-field input:focus-visible{
-    outline:2px solid var(--indigo);
-    outline-offset:1px;
-  }
-
-  .stepper-row{
-    display:flex;
-    gap:6px;
-    align-items:stretch;
-  }
+  .mini-field input:focus-visible{ outline:2px solid var(--indigo); outline-offset:1px; }
+  .stepper-row{ display:flex; gap:6px; align-items:stretch; }
   .stepper-row input{ flex:1; min-width:0; }
-  .stepper-btn{
-    background:var(--indigo-soft);
-    border:none;
-    color:var(--indigo-dark);
-    font-weight:700;
-    font-size:14px;
-    width:38px;
-    flex-shrink:0;
-    border-radius:10px;
-    cursor:pointer;
-  }
+  .stepper-btn{ background:var(--indigo-soft); border:none; color:var(--indigo-dark); font-weight:700; font-size:14px; width:38px; flex-shrink:0; border-radius:10px; cursor:pointer; }
   .stepper-btn:hover{ background:#E0E0FB; }
   .stepper-btn:active{ transform:scale(0.95); }
-  .stepper-btn:focus-visible{ outline:2px solid var(--indigo); outline-offset:1px; }
-
   .reason-field{ margin-bottom:9px; }
-
-  .reason-options{
-    display:flex;
-    gap:6px;
-    flex-wrap:wrap;
-    margin-bottom:8px;
-  }
-
-  .reason-chip{
-    background:var(--bg);
-    border:1.5px solid var(--line);
-    color:var(--ink-dim);
-    font-size:12.5px;
-    font-weight:600;
-    padding:7px 12px;
-    border-radius:999px;
-    cursor:pointer;
-  }
+  .reason-options{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px; }
+  .reason-chip{ background:var(--bg); border:1.5px solid var(--line); color:var(--ink-dim); font-size:12.5px; font-weight:600; padding:7px 12px; border-radius:999px; cursor:pointer; }
   .reason-chip:hover{ border-color:var(--indigo); color:var(--ink); }
-  .reason-chip.active{
-    background:var(--indigo);
-    border-color:var(--indigo);
-    color:#fff;
-  }
-
-  .toggle-link{
-    background:var(--indigo-soft);
-    border:none;
-    color:var(--indigo-dark);
-    font-size:13px;
-    font-weight:600;
-    cursor:pointer;
-    padding:9px 13px;
-    border-radius:10px;
-    width:100%;
-    text-align:center;
-  }
+  .reason-chip.active{ background:var(--indigo); border-color:var(--indigo); color:#fff; }
+  .toggle-link{ background:var(--indigo-soft); border:none; color:var(--indigo-dark); font-size:13px; font-weight:600; cursor:pointer; padding:9px 13px; border-radius:10px; width:100%; text-align:center; }
   .toggle-link:hover{ background:#E0E0FB; }
-
-  .signoff-row{
-    display:flex;
-    gap:8px;
-    align-items:stretch;
-  }
-
+  .signoff-row{ display:flex; gap:8px; align-items:stretch; }
   .signoff-row .mini-field{ flex:1; }
-
-  .confirm-btn{
-    background:var(--indigo);
-    color:#fff;
-    border:none;
-    font-family:'Inter', sans-serif;
-    font-weight:600;
-    font-size:13.5px;
-    padding:0 16px;
-    border-radius:10px;
-    cursor:pointer;
-    flex-shrink:0;
-  }
+  .confirm-btn{ background:var(--indigo); color:#fff; border:none; font-family:'Inter',sans-serif; font-weight:600; font-size:13.5px; padding:0 16px; border-radius:10px; cursor:pointer; flex-shrink:0; }
   .confirm-btn:hover{ background:var(--indigo-dark); }
   .confirm-btn:active{ transform:scale(0.98); }
-  .confirm-btn:focus-visible{ outline:2px solid var(--indigo-dark); outline-offset:2px; }
-
-  .confirmed-state{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:8px;
-    background:var(--green-soft);
-    border-radius:12px;
-    padding:10px 12px;
-  }
-
-  .confirmed-state .txt{
-    font-size:13px;
-    color:var(--green-text);
-    font-weight:600;
-    line-height:1.45;
-  }
-  .confirmed-state .txt .extra-note{
-    display:block;
-    font-size:12px;
-    color:#3a9a6c;
-    font-weight:500;
-  }
-  .confirmed-state .txt .when{
-    color:#3a9a6c;
-    font-weight:500;
-  }
-
-  .change-link{
-    background:none;
-    border:none;
-    color:var(--green-text);
-    font-size:12px;
-    font-weight:600;
-    text-decoration:underline;
-    cursor:pointer;
-    padding:2px;
-    flex-shrink:0;
-  }
-
-  /* ---------- catering cheat sheet ---------- */
-  .cater-grid{
-    display:grid;
-    grid-template-columns:repeat(auto-fit, minmax(250px, 1fr));
-    gap:16px;
-  }
-
-  .cater-card{
-    background:var(--card);
-    border-radius:18px;
-    padding:18px;
-    box-shadow:0 2px 14px rgba(46,43,77,0.06);
-    display:flex;
-    flex-direction:column;
-  }
-
-  .cater-name{
-    font-family:'Poppins', sans-serif;
-    font-weight:600;
-    font-size:17px;
-    margin-bottom:12px;
-  }
-
+  .confirmed-state{ display:flex; align-items:center; justify-content:space-between; gap:8px; background:var(--green-soft); border-radius:12px; padding:10px 12px; }
+  .confirmed-state .txt{ font-size:13px; color:var(--green-text); font-weight:600; line-height:1.45; }
+  .confirmed-state .txt .extra-note{ display:block; font-size:12px; color:#3a9a6c; font-weight:500; }
+  .confirmed-state .txt .when{ color:#3a9a6c; font-weight:500; }
+  .change-link{ background:none; border:none; color:var(--green-text); font-size:12px; font-weight:600; text-decoration:underline; cursor:pointer; padding:2px; flex-shrink:0; }
+  .cater-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:16px; }
+  .cater-card{ background:var(--card); border-radius:18px; padding:18px; box-shadow:0 2px 14px rgba(46,43,77,0.06); display:flex; flex-direction:column; }
+  .cater-name{ font-family:'Poppins',sans-serif; font-weight:600; font-size:17px; margin-bottom:12px; }
   .cater-fields{ margin-bottom:14px; flex:1; }
-
-  .tray-grid{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:8px;
-  }
-
-  .cater-result{
-    border-radius:12px;
-    padding:10px;
-    text-align:center;
-  }
+  .tray-grid{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .cater-result{ border-radius:12px; padding:10px; text-align:center; }
   .cater-result.reg{ background:var(--blue-soft); }
   .cater-result.spi{ background:var(--coral-soft); }
-
-  .cater-result .value{
-    font-family:'Poppins', sans-serif;
-    font-weight:700;
-    font-size:24px;
-    line-height:1.1;
-  }
+  .cater-result .value{ font-family:'Poppins',sans-serif; font-weight:700; font-size:24px; line-height:1.1; }
   .cater-result.reg .value{ color:var(--blue-text); }
   .cater-result.spi .value{ color:var(--coral-text); }
-
-  .cater-result .label-txt{
-    font-size:11px;
-    font-weight:600;
-    color:var(--ink-dim);
-    margin-top:1px;
-  }
-
-  @media (max-width: 540px){
-    .rail, .cater-grid{ grid-template-columns:1fr; }
-    header h1{ font-size:22px; }
-  }
+  .cater-result .label-txt{ font-size:11px; font-weight:600; color:var(--ink-dim); margin-top:1px; }
+  @media (max-width:540px){ .rail,.cater-grid{ grid-template-columns:1fr; } header h1{ font-size:22px; } }
 </style>
 </head>
 <body>
-
 <div class="app">
   <div class="fs-banner" id="fsRecoverBanner">⛶ Tap to return to full screen</div>
+  <div class="save-banner" id="saveErrorBanner">⚠ Changes aren't saving on this device — screenshot your entries and tell a manager</div>
   <header>
     <div>
       <h1>Coater Calc</h1>
       <div class="sub">Bags needed by daypart</div>
     </div>
-    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
       <button class="settings-btn" id="fullscreenBtn">⛶ Full screen</button>
       <button class="settings-btn" id="resetDayBtn">↻ Reset day</button>
       <button class="settings-btn" id="settingsToggle">⚙ Sheet sync</button>
     </div>
   </header>
-
   <div class="settings-panel" id="settingsPanel">
     <div class="field">
       <label>Forecast CSV URL (NG Forecast, published to web)</label>
@@ -600,13 +153,11 @@
     <button class="settings-save" id="settingsSave">Save</button>
     <div class="hint">Forecast URL pulls sales into the Daypart tab. Compliance URL logs every sign-off and extra-bag entry to your NG Compliance sheet automatically.</div>
   </div>
-
   <div class="tabs">
     <button class="tab-btn active" data-tab="daypart">Daypart forecast</button>
     <button class="tab-btn" data-tab="quick">Quick forecast</button>
     <button class="tab-btn" data-tab="catering">Catering cheat sheet</button>
   </div>
-
   <div class="tab-panel active" data-panel="daypart">
     <div class="sync-row">
       <button class="sync-btn" id="syncBtn">↻ Sync forecast from sheet</button>
@@ -615,99 +166,51 @@
     <div class="last-synced" id="lastSyncedLabel"></div>
     <div class="rail" id="rail"></div>
   </div>
-
   <div class="tab-panel" data-panel="quick">
     <div class="section-sub">Type any sales number to see bags needed — no sign-off, just a quick estimate</div>
     <div class="ticket" id="quickForecastCard"></div>
   </div>
-
   <div class="tab-panel" data-panel="catering">
     <div class="section-sub">Quick coater bags for catering orders</div>
     <div class="cater-grid" id="caterGrid"></div>
   </div>
 </div>
-
 <script>
 (function(){
   const REG_DIV = 1483;
   const SPI_DIV = 5592;
-  const STORAGE_KEY = 'coater_state_v15';
-
-  const DAYPART_NAMES = ['Breakfast', 'Lunch', 'Afternoon', 'Dinner'];
-
-  const REASON_OPTIONS = ['Ran out', 'More sales than expected', 'Catering', 'Other'];
-
-  // ---- catering cheat sheet config ----
-  // bags = units * usage * 8, rounded to nearest 0.1
-  const CATER_USAGE = {
-    filet: 0.001453,
-    nuggets: 0.000213,
-    spicy: 0.001911,
-    strips: 0.000539
-  };
-  const TRAY_SIZES = {
-    nuggets: { sm: 64, md: 120, lg: 200 },
-    strips:  { sm: 24, md: 45,  lg: 75 }
-  };
+  const STORAGE_KEY = 'coater_state_v16';
+  const DAYPART_NAMES = ['Breakfast','Lunch','Afternoon','Dinner'];
+  const REASON_OPTIONS = ['Ran out','More sales than expected','Catering','Other'];
+  const CATER_USAGE = { filet:0.001453, nuggets:0.000213, spicy:0.001911, strips:0.000539 };
+  const TRAY_SIZES = { nuggets:{sm:64,md:120,lg:200}, strips:{sm:24,md:45,lg:75} };
 
   const rail = document.getElementById('rail');
   const caterGrid = document.getElementById('caterGrid');
 
-  let state = {}; // { "Breakfast": { sales, confirmed:{name,time}|null, extraReg, extraSpi, reasonType, reason, extraOpen, extras:[{reg,spi,reason,name,time}] }, ... }
-  let caterState = {
-    quickForecast:'',
-    filetSold:'', spicySold:'',
-    nuggetsSm:'', nuggetsMd:'', nuggetsLg:'', nuggetsUnits:'',
-    stripsSm:'', stripsMd:'', stripsLg:'', stripsUnits:''
-  };
-  let settings = {
-    forecastUrl: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQxLpWL9qPe2VzW1ePMGsB2k87iyD2J-dgxq92S93oX8iB9wIkxNYl44L7q30grUJoEqT3FIYhBkFlD/pub?gid=0&single=true&output=csv',
-    complianceUrl: 'https://script.google.com/macros/s/AKfycbzTExr7gbLCWBG-S_n4RP55-eNYEm3pF8NnH6sddMBRJljhOa2DkGm5QnbFXo68oiJM/exec'
-  };
+  let state = {};
+  let caterState = { quickForecast:'', filetSold:'', spicySold:'', nuggetsSm:'', nuggetsMd:'', nuggetsLg:'', nuggetsUnits:'', stripsSm:'', stripsMd:'', stripsLg:'', stripsUnits:'' };
+  let settings = { forecastUrl:'', complianceUrl:'' };
   let lastResetDate = '';
   let lastSyncedAt = null;
   let saveTimer = null;
 
-  function todayStr(){
-    const d = new Date();
-    const pad = n => String(n).padStart(2, '0');
-    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
-  }
-
-  // Business day resets at 5:00 AM Mountain Time, regardless of the device's local timezone.
   function getMountainParts(date){
-    const fmt = new Intl.DateTimeFormat('en-US', {
-      timeZone: 'America/Denver',
-      year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', hour12:false
-    });
+    const fmt = new Intl.DateTimeFormat('en-US',{ timeZone:'America/Denver', year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', hour12:false });
     const obj = {};
     fmt.formatToParts(date).forEach(p => { if (p.type !== 'literal') obj[p.type] = p.value; });
-    return {
-      year:+obj.year, month:+obj.month, day:+obj.day,
-      hour: obj.hour === '24' ? 0 : +obj.hour, minute:+obj.minute
-    };
+    return { year:+obj.year, month:+obj.month, day:+obj.day, hour:obj.hour==='24'?0:+obj.hour };
   }
 
   function operatingDayStr(){
     const p = getMountainParts(new Date());
-    // Anchor at UTC noon so date-only arithmetic never gets shifted by DST.
-    const anchor = new Date(Date.UTC(p.year, p.month - 1, p.day, 12, 0, 0));
-    if (p.hour < 5){
-      anchor.setUTCDate(anchor.getUTCDate() - 1);
-    }
-    const y = anchor.getUTCFullYear();
-    const m = String(anchor.getUTCMonth() + 1).padStart(2, '0');
-    const d = String(anchor.getUTCDate()).padStart(2, '0');
-    return `${y}-${m}-${d}`;
+    const anchor = new Date(Date.UTC(p.year, p.month-1, p.day, 12, 0, 0));
+    if (p.hour < 5) anchor.setUTCDate(anchor.getUTCDate()-1);
+    return anchor.getUTCFullYear()+'-'+String(anchor.getUTCMonth()+1).padStart(2,'0')+'-'+String(anchor.getUTCDate()).padStart(2,'0');
   }
 
   function freshCaterDefaults(){
-    return {
-      quickForecast:'',
-      filetSold:'', spicySold:'',
-      nuggetsSm:'', nuggetsMd:'', nuggetsLg:'', nuggetsUnits:'',
-      stripsSm:'', stripsMd:'', stripsLg:'', stripsUnits:''
-    };
+    return { quickForecast:'', filetSold:'', spicySold:'', nuggetsSm:'', nuggetsMd:'', nuggetsLg:'', nuggetsUnits:'', stripsSm:'', stripsMd:'', stripsLg:'', stripsUnits:'' };
   }
 
   function resetDailyData(){
@@ -716,682 +219,24 @@
     lastResetDate = operatingDayStr();
   }
 
-  // ---------- sheet sync helpers ----------
-  function parseCsv(text){
-    // minimal CSV parser handling quoted fields with commas, e.g. "$5,000.00"
-    const rows = [];
-    let row = [], field = '', inQuotes = false;
-    for (let i = 0; i < text.length; i++){
-      const c = text[i];
-      if (inQuotes){
-        if (c === '"'){
-          if (text[i+1] === '"'){ field += '"'; i++; }
-          else { inQuotes = false; }
-        } else { field += c; }
-      } else {
-        if (c === '"'){ inQuotes = true; }
-        else if (c === ','){ row.push(field); field = ''; }
-        else if (c === '\n' || c === '\r'){
-          if (c === '\r' && text[i+1] === '\n') i++;
-          row.push(field); field = '';
-          rows.push(row); row = [];
-        } else { field += c; }
-      }
-    }
-    if (field.length || row.length){ row.push(field); rows.push(row); }
-    return rows.filter(r => r.length && r.some(c => c.trim() !== ''));
-  }
-
-  function moneyToNumber(str){
-    const cleaned = String(str || '').replace(/[^0-9.\-]/g, '');
-    const n = parseFloat(cleaned);
-    return isFinite(n) ? n : 0;
-  }
-
-  function renderLastSynced(){
-    const el = document.getElementById('lastSyncedLabel');
-    if (!el) return;
-    el.textContent = lastSyncedAt
-      ? `Last synced ${fmtTime(lastSyncedAt)}`
-      : 'Not synced yet';
-  }
-
-  async function syncForecast(){
-    const statusEl = document.getElementById('syncStatus');
-    if (!settings.forecastUrl){
-      statusEl.textContent = 'Add a forecast URL in Sheet sync settings first';
-      statusEl.className = 'sync-status error';
-      return;
-    }
-    statusEl.textContent = 'Syncing…';
-    statusEl.className = 'sync-status';
+  /* ---- persistence: localStorage (works on GitHub Pages) ---- */
+  function save(){
     try{
-      const res = await fetch(settings.forecastUrl);
-      if (!res.ok) throw new Error('Request failed');
-      const text = await res.text();
-      const rows = parseCsv(text);
-      let matched = 0;
-      rows.forEach(r => {
-        const dpName = (r[0] || '').trim();
-        const match = DAYPART_NAMES.find(n => n.toLowerCase() === dpName.toLowerCase());
-        if (match){
-          const dp = ensureDaypart(match);
-          dp.sales = String(moneyToNumber(r[1]));
-          matched++;
-        }
-      });
-      renderAllDayparts();
-      lastSyncedAt = Date.now();
-      renderLastSynced();
-      scheduleSave();
-      statusEl.textContent = matched
-        ? `Synced ${matched} daypart${matched === 1 ? '' : 's'} just now`
-        : 'No matching daypart names found in the sheet';
-      statusEl.className = matched ? 'sync-status success' : 'sync-status error';
-    }catch(err){
-      statusEl.textContent = "Couldn't reach the sheet — check the URL and sharing settings";
-      statusEl.className = 'sync-status error';
-    }
-  }
-
-  function logToCompliance(payload){
-    if (!settings.complianceUrl) return;
-    fetch(settings.complianceUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // avoids CORS preflight on Apps Script
-      body: JSON.stringify(payload)
-    }).catch(() => { /* best-effort; sign-off still stands locally even if logging fails */ });
-  }
-
-  function setupFullscreen(){
-    const btn = document.getElementById('fullscreenBtn');
-    const banner = document.getElementById('fsRecoverBanner');
-    if (!document.documentElement.requestFullscreen && !document.documentElement.webkitRequestFullscreen){
-      btn.style.display = 'none'; // not supported on this device/browser
-      return;
-    }
-
-    let intentionalExit = false;
-    let wasFullscreen = false;
-
-    function enterFullscreen(){
-      const el = document.documentElement;
-      return (el.requestFullscreen || el.webkitRequestFullscreen).call(el).catch(() => {});
-    }
-    function exitFullscreen(){
-      intentionalExit = true;
-      return (document.exitFullscreen || document.webkitExitFullscreen).call(document).catch(() => {});
-    }
-
-    btn.addEventListener('click', () => {
-      const isFs = document.fullscreenElement || document.webkitFullscreenElement;
-      if (!isFs) enterFullscreen();
-      else exitFullscreen();
-    });
-
-    banner.addEventListener('click', () => {
-      banner.classList.remove('show');
-      enterFullscreen();
-    });
-
-    const updateLabel = () => {
-      const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
-      btn.textContent = isFs ? '⛶ Exit full screen' : '⛶ Full screen';
-
-      if (isFs){
-        wasFullscreen = true;
-        banner.classList.remove('show');
-      } else if (wasFullscreen && !intentionalExit){
-        // Dropped out of fullscreen on its own (an iOS gesture, not our button) — offer one tap back in.
-        banner.classList.add('show');
-      }
-      wasFullscreen = isFs;
-      intentionalExit = false;
-    };
-    document.addEventListener('fullscreenchange', updateLabel);
-    document.addEventListener('webkitfullscreenchange', updateLabel);
-  }
-
-  let wakeLock = null;
-  async function requestWakeLock(){
-    try{
-      if ('wakeLock' in navigator){
-        wakeLock = await navigator.wakeLock.request('screen');
-      }
-    }catch(err){
-      // unsupported, or device declined (e.g. low battery) — fail silently
-    }
-  }
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') requestWakeLock();
-  });
-
-  function setupSettings(){
-    const toggle = document.getElementById('settingsToggle');
-    const panel = document.getElementById('settingsPanel');
-    const forecastInput = document.getElementById('forecastUrlInput');
-    const complianceInput = document.getElementById('complianceUrlInput');
-    const saveBtn = document.getElementById('settingsSave');
-
-    forecastInput.value = settings.forecastUrl || '';
-    complianceInput.value = settings.complianceUrl || '';
-
-    toggle.addEventListener('click', () => panel.classList.toggle('open'));
-    saveBtn.addEventListener('click', () => {
-      settings.forecastUrl = forecastInput.value.trim();
-      settings.complianceUrl = complianceInput.value.trim();
-      scheduleSave();
-      panel.classList.remove('open');
-    });
-
-    document.getElementById('syncBtn').addEventListener('click', syncForecast);
-
-    document.getElementById('resetDayBtn').addEventListener('click', () => {
-      const ok = window.confirm('Reset all sales, sign-offs, and extra-bag entries for today? This cannot be undone.');
-      if (!ok) return;
-      resetDailyData();
-      renderAllDayparts();
-      renderQuickForecast();
-      renderCateringSheet();
-      save();
-      syncForecast();
-    });
-  }
-
-  function ensureDaypart(name){
-    if (!state[name]){
-      state[name] = {
-        sales:'', confirmed:null,
-        extraReg:'', extraSpi:'', reasonType:'', reason:'',
-        extraOpen:false, extras:[]
-      };
-    }
-    if (!state[name].extras) state[name].extras = [];
-    return state[name];
-  }
-
-  function bagsRegular(sales){ return Math.ceil(sales / REG_DIV); }
-  function bagsSpicy(sales){ return Math.ceil(sales / SPI_DIV); }
-  function num(v){ const n = parseFloat(v); return isFinite(n) && n > 0 ? n : 0; }
-
-  function fmtTime(ts){
-    const d = new Date(ts);
-    return d.toLocaleDateString(undefined, { month:'short', day:'numeric' }) + ' · ' +
-           d.toLocaleTimeString(undefined, { hour:'numeric', minute:'2-digit' });
-  }
-
-  function escapeHtml(str){
-    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
-  }
-
-  function renderTicket(name){
-    const dp = ensureDaypart(name);
-    const sales = parseFloat(dp.sales);
-    const validSales = isFinite(sales) && sales > 0 ? sales : 0;
-    const reg = bagsRegular(validSales);
-    const spi = bagsSpicy(validSales);
-
-    const ticket = document.createElement('div');
-    ticket.className = 'ticket';
-
-    const nameEl = document.createElement('div');
-    nameEl.className = 'ticket-name';
-    nameEl.textContent = name;
-    ticket.appendChild(nameEl);
-
-    const salesRow = document.createElement('div');
-    salesRow.className = 'sales-row';
-    salesRow.innerHTML = `
-      <span class="dollar">$</span>
-      <input class="sales-input" type="number" inputmode="decimal" min="0" step="1"
-             placeholder="0" value="${dp.sales || ''}"
-             aria-label="Forecast sales for ${name}" />
-    `;
-    ticket.appendChild(salesRow);
-
-    const resultsRow = document.createElement('div');
-    resultsRow.className = 'results';
-    resultsRow.innerHTML = `
-      <div class="result reg">
-        <div class="value" data-role="reg">${reg}</div>
-        <div class="label-txt">regular</div>
-      </div>
-      <div class="result spi">
-        <div class="value" data-role="spi">${spi}</div>
-        <div class="label-txt">spicy</div>
-      </div>
-    `;
-    ticket.appendChild(resultsRow);
-
-    salesRow.querySelector('.sales-input').addEventListener('input', (e) => {
-      dp.sales = e.target.value;
-      const s = parseFloat(e.target.value);
-      const v = isFinite(s) && s > 0 ? s : 0;
-      resultsRow.querySelector('[data-role="reg"]').textContent = bagsRegular(v);
-      resultsRow.querySelector('[data-role="spi"]').textContent = bagsSpicy(v);
-      scheduleSave();
-    });
-
-    const divider = document.createElement('div');
-    divider.className = 'divider';
-    ticket.appendChild(divider);
-
-    const signoffWrap = document.createElement('div');
-    ticket.appendChild(signoffWrap);
-    renderMainSignoff(signoffWrap, name);
-
-    const extraWrap = document.createElement('div');
-    extraWrap.className = 'extra-block';
-    ticket.appendChild(extraWrap);
-    renderExtraBlock(extraWrap, name);
-
-    return ticket;
-  }
-
-  function renderMainSignoff(wrap, name){
-    const dp = ensureDaypart(name);
-
-    if (dp.confirmed){
-      wrap.innerHTML = `
-        <div class="confirmed-state">
-          <div class="txt">✓ ${escapeHtml(dp.confirmed.name)} confirmed correct amount
-            <span class="when">· ${fmtTime(dp.confirmed.time)}</span>
-          </div>
-          <button class="change-link">Change</button>
-        </div>
-      `;
-      wrap.querySelector('.change-link').addEventListener('click', () => {
-        dp.confirmed = null;
-        renderMainSignoff(wrap, name);
-        scheduleSave();
-      });
-      return;
-    }
-
-    wrap.innerHTML = `
-      <div class="sub-label">Sign off — I took the correct amount</div>
-      <div class="signoff-row">
-        <div class="mini-field">
-          <input type="text" class="signoffName" placeholder="Initials" maxlength="6" value="${escapeHtml(dp.pendingName || '')}" />
-        </div>
-        <button class="confirm-btn">Confirm</button>
-      </div>
-    `;
-
-    const signoffName = wrap.querySelector('.signoffName');
-    const confirmBtn = wrap.querySelector('.confirm-btn');
-
-    signoffName.addEventListener('input', (e) => { dp.pendingName = e.target.value; scheduleSave(); });
-
-    confirmBtn.addEventListener('click', () => {
-      const nameVal = signoffName.value.trim();
-      if (!nameVal) { signoffName.focus(); return; }
-      dp.confirmed = { name: nameVal, time: Date.now() };
-      delete dp.pendingName;
-      renderMainSignoff(wrap, name);
-      scheduleSave();
-
-      const sales = parseFloat(dp.sales);
-      const v = isFinite(sales) && sales > 0 ? sales : 0;
-      logToCompliance({
-        daypart: name,
-        type: 'Pickup',
-        name: nameVal,
-        regularBags: bagsRegular(v),
-        spicyBags: bagsSpicy(v),
-        reason: ''
-      });
-    });
-  }
-
-  function renderExtraBlock(wrap, name){
-    const dp = ensureDaypart(name);
-    if (!dp.extras) dp.extras = [];
-
-    const entriesHtml = dp.extras.map((entry, idx) => {
-      const parts = [];
-      if (entry.reg > 0) parts.push(`+${entry.reg} regular`);
-      if (entry.spi > 0) parts.push(`+${entry.spi} spicy`);
-      return `
-        <div class="confirmed-state" style="margin-bottom:6px;" data-idx="${idx}">
-          <div class="txt">✓ ${escapeHtml(parts.join(' · '))} confirmed by ${escapeHtml(entry.name)}
-            <span class="when">· ${fmtTime(entry.time)}</span>
-            ${entry.reason ? `<span class="extra-note">${escapeHtml(entry.reason)}</span>` : ''}
-          </div>
-          <button class="change-link remove-extra-btn" data-idx="${idx}">Remove</button>
-        </div>
-      `;
-    }).join('');
-
-    if (!dp.extraOpen){
-      wrap.innerHTML = `
-        ${entriesHtml}
-        <button class="toggle-link">${dp.extras.length ? '+ Add another extra-bag entry' : '+ Need more bags than allocated?'}</button>
-      `;
-      wrap.querySelectorAll('.remove-extra-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          dp.extras.splice(parseInt(btn.dataset.idx, 10), 1);
-          renderExtraBlock(wrap, name);
-          scheduleSave();
-        });
-      });
-      wrap.querySelector('.toggle-link').addEventListener('click', () => {
-        dp.extraOpen = true;
-        renderExtraBlock(wrap, name);
-        scheduleSave();
-      });
-      return;
-    }
-
-    const isOther = dp.reasonType === 'Other';
-
-    wrap.innerHTML = `
-      ${entriesHtml}
-      <div class="extra-head">
-        <div class="sub-label">${dp.extras.length ? 'Add another entry' : 'Extra bags taken'}</div>
-        <button class="collapse-link">Collapse</button>
-      </div>
-      <div class="extra-grid">
-        <div class="mini-field">
-          <label>Extra regular</label>
-          <div class="stepper-row">
-            <input type="number" class="extraRegInput" min="0" step="1" placeholder="0" value="${dp.extraReg || ''}" />
-            <button type="button" class="stepper-btn" data-target="extraRegInput">+1</button>
-          </div>
-        </div>
-        <div class="mini-field">
-          <label>Extra spicy</label>
-          <div class="stepper-row">
-            <input type="number" class="extraSpiInput" min="0" step="1" placeholder="0" value="${dp.extraSpi || ''}" />
-            <button type="button" class="stepper-btn" data-target="extraSpiInput">+1</button>
-          </div>
-        </div>
-      </div>
-      <div class="reason-field">
-        <label class="sub-label" style="margin-bottom:6px;">Reason</label>
-        <div class="reason-options">
-          ${REASON_OPTIONS.map(r => `<button type="button" class="reason-chip ${dp.reasonType === r ? 'active' : ''}" data-reason="${escapeHtml(r)}">${escapeHtml(r)}</button>`).join('')}
-        </div>
-        ${isOther ? `<div class="mini-field"><input type="text" class="reasonCustomInput" placeholder="What happened?" value="${escapeHtml(dp.reason || '')}" /></div>` : ''}
-      </div>
-      <div class="sub-label">Sign off — extra bags taken</div>
-      <div class="signoff-row">
-        <div class="mini-field">
-          <input type="text" class="extraSignoffName" placeholder="Initials" maxlength="6" value="${escapeHtml(dp.extraPendingName || '')}" />
-        </div>
-        <button class="confirm-btn">Confirm</button>
-      </div>
-    `;
-
-    wrap.querySelectorAll('.remove-extra-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        dp.extras.splice(parseInt(btn.dataset.idx, 10), 1);
-        renderExtraBlock(wrap, name);
-        scheduleSave();
-      });
-    });
-
-    wrap.querySelector('.collapse-link').addEventListener('click', () => {
-      dp.extraOpen = false;
-      renderExtraBlock(wrap, name);
-      scheduleSave();
-    });
-
-    wrap.querySelectorAll('.reason-chip').forEach(chip => {
-      chip.addEventListener('click', () => {
-        const val = chip.dataset.reason;
-        dp.reasonType = val;
-        dp.reason = (val === 'Other') ? '' : val;
-        renderExtraBlock(wrap, name);
-        scheduleSave();
-      });
-    });
-
-    const customInput = wrap.querySelector('.reasonCustomInput');
-    if (customInput){
-      customInput.addEventListener('input', (e) => { dp.reason = e.target.value; scheduleSave(); });
-      customInput.focus();
-    }
-
-    const extraRegInput = wrap.querySelector('.extraRegInput');
-    const extraSpiInput = wrap.querySelector('.extraSpiInput');
-    const extraSignoffName = wrap.querySelector('.extraSignoffName');
-    const confirmBtn = wrap.querySelector('.confirm-btn');
-
-    extraRegInput.addEventListener('input', (e) => { dp.extraReg = e.target.value; scheduleSave(); });
-    extraSpiInput.addEventListener('input', (e) => { dp.extraSpi = e.target.value; scheduleSave(); });
-    extraSignoffName.addEventListener('input', (e) => { dp.extraPendingName = e.target.value; scheduleSave(); });
-
-    wrap.querySelectorAll('.stepper-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const target = wrap.querySelector(`.${btn.dataset.target}`);
-        if (!target) return;
-        const current = parseInt(target.value, 10) || 0;
-        target.value = current + 1;
-        target.dispatchEvent(new Event('input', { bubbles: true }));
-      });
-    });
-
-    confirmBtn.addEventListener('click', () => {
-      const nameVal = extraSignoffName.value.trim();
-      const r = parseInt(extraRegInput.value, 10) || 0;
-      const s = parseInt(extraSpiInput.value, 10) || 0;
-
-      if (r <= 0 && s <= 0) { extraRegInput.focus(); return; }
-      if (!nameVal) { extraSignoffName.focus(); return; }
-      if (!dp.reasonType) { return; }
-      if (dp.reasonType === 'Other' && !dp.reason) { if (customInput) customInput.focus(); return; }
-
-      const reasonText = dp.reason || '';
-
-      dp.extras.push({ reg: r, spi: s, reason: reasonText, name: nameVal, time: Date.now() });
-
-      // reset the draft fields and close the form, ready for another entry if needed
-      dp.extraReg = '';
-      dp.extraSpi = '';
-      dp.reasonType = '';
-      dp.reason = '';
-      delete dp.extraPendingName;
-      dp.extraOpen = false;
-
-      renderExtraBlock(wrap, name);
-      scheduleSave();
-
-      logToCompliance({
-        daypart: name,
-        type: 'Extra',
-        name: nameVal,
-        regularBags: r,
-        spicyBags: s,
-        reason: reasonText
-      });
-    });
-  }
-
-  function setupTabs(){
-    const buttons = document.querySelectorAll('.tab-btn');
-    const panels = document.querySelectorAll('.tab-panel');
-    buttons.forEach(btn => {
-      btn.addEventListener('click', () => {
-        const target = btn.dataset.tab;
-        buttons.forEach(b => b.classList.toggle('active', b === btn));
-        panels.forEach(p => p.classList.toggle('active', p.dataset.panel === target));
-      });
-    });
-  }
-
-  function renderAllDayparts(){
-    rail.innerHTML = '';
-    DAYPART_NAMES.forEach(name => {
-      rail.appendChild(renderTicket(name));
-    });
-  }
-
-  function renderAll(){
-    setupTabs();
-    setupSettings();
-    setupFullscreen();
-    renderQuickForecast();
-    renderAllDayparts();
-    renderCateringSheet();
-  }
-
-  // ---------- quick forecast (manual, no sign-off) ----------
-  function renderQuickForecast(){
-    const card = document.getElementById('quickForecastCard');
-    card.innerHTML = `
-      <div class="sales-row" style="margin-bottom:14px;">
-        <span class="dollar">$</span>
-        <input class="sales-input" id="quickForecastInput" type="number" inputmode="decimal" min="0" step="1"
-               placeholder="Enter forecasted sales" value="${caterState.quickForecast || ''}"
-               aria-label="Forecasted sales" />
-      </div>
-      <div class="results" style="margin-bottom:0;">
-        <div class="result reg">
-          <div class="value" id="quickReg">0</div>
-          <div class="label-txt">regular</div>
-        </div>
-        <div class="result spi">
-          <div class="value" id="quickSpi">0</div>
-          <div class="label-txt">spicy</div>
-        </div>
-      </div>
-    `;
-
-    const input = document.getElementById('quickForecastInput');
-    const regEl = document.getElementById('quickReg');
-    const spiEl = document.getElementById('quickSpi');
-
-    function recompute(){
-      const v = num(input.value);
-      regEl.textContent = bagsRegular(v);
-      spiEl.textContent = bagsSpicy(v);
-    }
-    input.addEventListener('input', () => {
-      caterState.quickForecast = input.value;
-      recompute();
-      scheduleSave();
-    });
-    recompute();
-  }
-
-  // ---------- catering cheat sheet ----------
-  function renderCateringSheet(){
-    caterGrid.innerHTML = '';
-
-    caterGrid.appendChild(buildIndividualCard('Filet', 'filetSold', 'reg', CATER_USAGE.filet));
-    caterGrid.appendChild(buildIndividualCard('Spicy', 'spicySold', 'spi', CATER_USAGE.spicy));
-    caterGrid.appendChild(buildTrayCard('Nuggets', 'nuggets', 'reg', CATER_USAGE.nuggets, TRAY_SIZES.nuggets));
-    caterGrid.appendChild(buildTrayCard('Strips', 'strips', 'reg', CATER_USAGE.strips, TRAY_SIZES.strips));
-  }
-
-  function caterBags(units, usage){
-    return (units * usage * 8).toFixed(1);
-  }
-
-  function buildIndividualCard(label, stateKey, colorClass, usage){
-    const card = document.createElement('div');
-    card.className = 'cater-card';
-    card.innerHTML = `
-      <div class="cater-name">${label}</div>
-      <div class="cater-fields">
-        <div class="mini-field">
-          <label>Units sold</label>
-          <input type="number" class="caterInput" min="0" step="1" placeholder="0" value="${caterState[stateKey] || ''}" />
-        </div>
-      </div>
-      <div class="cater-result ${colorClass}">
-        <div class="value" data-role="bags">0.0</div>
-        <div class="label-txt">bags</div>
-      </div>
-    `;
-    const input = card.querySelector('.caterInput');
-    const valueEl = card.querySelector('[data-role="bags"]');
-
-    function recompute(){
-      valueEl.textContent = caterBags(num(input.value), usage);
-    }
-    input.addEventListener('input', () => {
-      caterState[stateKey] = input.value;
-      recompute();
-      scheduleSave();
-    });
-    recompute();
-    return card;
-  }
-
-  function buildTrayCard(label, prefix, colorClass, usage, sizes){
-    const card = document.createElement('div');
-    card.className = 'cater-card';
-    card.innerHTML = `
-      <div class="cater-name">${label}</div>
-      <div class="cater-fields">
-        <div class="tray-grid">
-          <div class="mini-field">
-            <label>Small (${sizes.sm}ct)</label>
-            <input type="number" class="trayInput" data-size="sm" min="0" step="1" placeholder="0" value="${caterState[prefix+'Sm'] || ''}" />
-          </div>
-          <div class="mini-field">
-            <label>Medium (${sizes.md}ct)</label>
-            <input type="number" class="trayInput" data-size="md" min="0" step="1" placeholder="0" value="${caterState[prefix+'Md'] || ''}" />
-          </div>
-          <div class="mini-field">
-            <label>Large (${sizes.lg}ct)</label>
-            <input type="number" class="trayInput" data-size="lg" min="0" step="1" placeholder="0" value="${caterState[prefix+'Lg'] || ''}" />
-          </div>
-          <div class="mini-field">
-            <label>Units (free entry)</label>
-            <input type="number" class="trayInput" data-size="units" min="0" step="1" placeholder="0" value="${caterState[prefix+'Units'] || ''}" />
-          </div>
-        </div>
-      </div>
-      <div class="cater-result ${colorClass}">
-        <div class="value" data-role="bags">0.0</div>
-        <div class="label-txt">bags</div>
-      </div>
-    `;
-    const inputs = card.querySelectorAll('.trayInput');
-    const valueEl = card.querySelector('[data-role="bags"]');
-
-    function recompute(){
-      const sm = num(card.querySelector('[data-size="sm"]').value);
-      const md = num(card.querySelector('[data-size="md"]').value);
-      const lg = num(card.querySelector('[data-size="lg"]').value);
-      const units = num(card.querySelector('[data-size="units"]').value);
-      const totalUnits = sm * sizes.sm + md * sizes.md + lg * sizes.lg + units;
-      valueEl.textContent = caterBags(totalUnits, usage);
-    }
-    inputs.forEach(inp => {
-      inp.addEventListener('input', () => {
-        const sizeKey = inp.dataset.size;
-        const stateField = prefix + (sizeKey === 'sm' ? 'Sm' : sizeKey === 'md' ? 'Md' : sizeKey === 'lg' ? 'Lg' : 'Units');
-        caterState[stateField] = inp.value;
-        recompute();
-        scheduleSave();
-      });
-    });
-    recompute();
-    return card;
-  }
-
-  function scheduleSave(){
-    clearTimeout(saveTimer);
-    saveTimer = setTimeout(save, 400);
-  }
-
-  async function save(){
-    try{
-      await window.storage.set(STORAGE_KEY, JSON.stringify({ state, caterState, settings, lastResetDate, lastSyncedAt }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ state, caterState, settings, lastResetDate, lastSyncedAt }));
+      const banner=document.getElementById('saveErrorBanner');
+      if (banner) banner.classList.remove('show');
     }catch(err){
       console.error('Save failed', err);
+      const banner=document.getElementById('saveErrorBanner');
+      if (banner) banner.classList.add('show');
     }
   }
 
-  async function load(){
+  function load(){
     try{
-      const result = await window.storage.get(STORAGE_KEY);
-      if (result && result.value){
-        const parsed = JSON.parse(result.value);
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw){
+        const parsed = JSON.parse(raw);
         if (parsed && typeof parsed === 'object'){
           if (parsed.state) state = parsed.state;
           if (parsed.caterState) caterState = Object.assign(caterState, parsed.caterState);
@@ -1400,37 +245,320 @@
           if (parsed.lastSyncedAt) lastSyncedAt = parsed.lastSyncedAt;
         }
       }
-    }catch(err){
-      // keep defaults
-    }
-
+    }catch(err){ /* keep defaults */ }
     if (lastResetDate !== operatingDayStr()){
       resetDailyData();
-      await save();
-      await syncForecast();
-    }
-  }
-
-  function checkAndResetIfNeeded(){
-    if (lastResetDate !== operatingDayStr()){
-      resetDailyData();
-      renderAllDayparts();
-      renderQuickForecast();
-      renderCateringSheet();
       save();
       syncForecast();
     }
   }
 
-  load().then(() => {
-    renderAll();
-    renderLastSynced();
-    requestWakeLock();
-    // Catches the 5am Mountain Time rollover on devices/tablets left open overnight.
-    setInterval(checkAndResetIfNeeded, 60000);
-  });
+  function scheduleSave(){
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(save, 400);
+  }
+
+  /* ---- CSV + forecast sync ---- */
+  function parseCsv(text){
+    const rows = []; let row=[], field='', inQuotes=false;
+    for (let i=0; i<text.length; i++){
+      const c=text[i];
+      if (inQuotes){ if (c==='"'){ if (text[i+1]==='"'){field+='"';i++;} else {inQuotes=false;} } else {field+=c;} }
+      else { if (c==='"'){inQuotes=true;} else if (c===','){row.push(field);field='';} else if (c==='\n'||c==='\r'){ if(c==='\r'&&text[i+1]==='\n')i++; row.push(field);field='';rows.push(row);row=[]; } else {field+=c;} }
+    }
+    if (field.length||row.length){row.push(field);rows.push(row);}
+    return rows.filter(r=>r.length&&r.some(c=>c.trim()!==''));
+  }
+
+  function moneyToNumber(str){ const n=parseFloat(String(str||'').replace(/[^0-9.\-]/g,'')); return isFinite(n)?n:0; }
+
+  function renderLastSynced(){
+    const el=document.getElementById('lastSyncedLabel');
+    if (el) el.textContent = lastSyncedAt ? 'Last synced '+fmtTime(lastSyncedAt) : 'Not synced yet';
+  }
+
+  async function syncForecast(){
+    const statusEl=document.getElementById('syncStatus');
+    if (!settings.forecastUrl){ if(statusEl){statusEl.textContent='Add a forecast URL in Sheet sync settings first';statusEl.className='sync-status error';} return; }
+    if (statusEl){statusEl.textContent='Syncing…';statusEl.className='sync-status';}
+    try{
+      const res=await fetch(settings.forecastUrl);
+      if (!res.ok) throw new Error('failed');
+      const rows=parseCsv(await res.text());
+      let matched=0;
+      rows.forEach(r=>{ const dpName=(r[0]||'').trim(); const match=DAYPART_NAMES.find(n=>n.toLowerCase()===dpName.toLowerCase()); if(match){ensureDaypart(match).sales=String(moneyToNumber(r[1]));matched++;} });
+      renderAllDayparts();
+      lastSyncedAt=Date.now(); renderLastSynced(); save();
+      if(statusEl){statusEl.textContent=matched?'Synced '+matched+' daypart'+(matched===1?'':'s')+' just now':'No matching daypart names found'; statusEl.className=matched?'sync-status success':'sync-status error';}
+    }catch(e){ if(statusEl){statusEl.textContent="Couldn't reach the sheet — check the URL and sharing settings";statusEl.className='sync-status error';} }
+  }
+
+  function logToCompliance(payload){
+    if (!settings.complianceUrl) return;
+    fetch(settings.complianceUrl,{ method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify(payload) }).catch(()=>{});
+  }
+
+  /* ---- fullscreen ---- */
+  function setupFullscreen(){
+    const btn=document.getElementById('fullscreenBtn');
+    const banner=document.getElementById('fsRecoverBanner');
+    if (!document.documentElement.requestFullscreen&&!document.documentElement.webkitRequestFullscreen){btn.style.display='none';return;}
+    let intentionalExit=false, wasFullscreen=false;
+    function enter(){ return (document.documentElement.requestFullscreen||document.documentElement.webkitRequestFullscreen).call(document.documentElement).catch(()=>{}); }
+    function exit(){ intentionalExit=true; return (document.exitFullscreen||document.webkitExitFullscreen).call(document).catch(()=>{}); }
+    btn.addEventListener('click',()=>{ const isFs=document.fullscreenElement||document.webkitFullscreenElement; if(!isFs)enter();else exit(); });
+    banner.addEventListener('click',()=>{ banner.classList.remove('show'); enter(); });
+    const upd=()=>{ const isFs=!!(document.fullscreenElement||document.webkitFullscreenElement); btn.textContent=isFs?'⛶ Exit full screen':'⛶ Full screen'; if(isFs){wasFullscreen=true;banner.classList.remove('show');} else if(wasFullscreen&&!intentionalExit){banner.classList.add('show');} wasFullscreen=isFs;intentionalExit=false; };
+    document.addEventListener('fullscreenchange',upd);
+    document.addEventListener('webkitfullscreenchange',upd);
+  }
+
+  let wakeLock=null;
+  async function requestWakeLock(){ try{ if('wakeLock'in navigator) wakeLock=await navigator.wakeLock.request('screen'); }catch(e){} }
+  document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') requestWakeLock(); });
+
+  /* ---- settings ---- */
+  function setupSettings(){
+    const toggle=document.getElementById('settingsToggle');
+    const panel=document.getElementById('settingsPanel');
+    const fIn=document.getElementById('forecastUrlInput');
+    const cIn=document.getElementById('complianceUrlInput');
+    fIn.value=settings.forecastUrl||'';
+    cIn.value=settings.complianceUrl||'';
+    toggle.addEventListener('click',()=>panel.classList.toggle('open'));
+    document.getElementById('settingsSave').addEventListener('click',()=>{ settings.forecastUrl=fIn.value.trim(); settings.complianceUrl=cIn.value.trim(); save(); panel.classList.remove('open'); });
+    document.getElementById('syncBtn').addEventListener('click',syncForecast);
+    document.getElementById('resetDayBtn').addEventListener('click',()=>{ if(!window.confirm('Reset all sales, sign-offs, and extra-bag entries for today? This cannot be undone.'))return; resetDailyData(); renderAllDayparts(); renderQuickForecast(); renderCateringSheet(); save(); syncForecast(); });
+  }
+
+  /* ---- tabs ---- */
+  function setupTabs(){
+    const btns=document.querySelectorAll('.tab-btn'), panels=document.querySelectorAll('.tab-panel');
+    btns.forEach(btn=>btn.addEventListener('click',()=>{ const t=btn.dataset.tab; btns.forEach(b=>b.classList.toggle('active',b===btn)); panels.forEach(p=>p.classList.toggle('active',p.dataset.panel===t)); }));
+  }
+
+  /* ---- daypart helpers ---- */
+  function ensureDaypart(name){
+    if (!state[name]) state[name]={ sales:'', confirmed:null, extraReg:'', extraSpi:'', reasonType:'', reason:'', extraOpen:false, extras:[] };
+    if (!state[name].extras) state[name].extras=[];
+    return state[name];
+  }
+
+  function bagsRegular(sales){ return Math.ceil(sales/REG_DIV); }
+  function bagsSpicy(sales){ return Math.ceil(sales/SPI_DIV); }
+  function num(v){ const n=parseFloat(v); return isFinite(n)&&n>0?n:0; }
+
+  function fmtTime(ts){
+    const d=new Date(ts);
+    return d.toLocaleDateString(undefined,{month:'short',day:'numeric'})+' · '+d.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'});
+  }
+
+  function escapeHtml(str){ return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
+
+  /* ---- inline field validation feedback ---- */
+  function markInvalid(el){ if(!el) return; const target=el.closest('.mini-field')||el.closest('.reason-options')||el; target.classList.add('invalid'); }
+  function clearInvalid(wrap){ wrap.querySelectorAll('.invalid').forEach(el=>el.classList.remove('invalid')); const err=wrap.querySelector('.field-error'); if(err) err.remove(); }
+  function showFieldError(wrap, message, anchorSelector){
+    const err=document.createElement('div'); err.className='field-error'; err.setAttribute('role','alert'); err.textContent=message;
+    const anchor=wrap.querySelector(anchorSelector);
+    if (anchor) anchor.insertAdjacentElement('afterend', err); else wrap.appendChild(err);
+    wrap.classList.add('shake'); setTimeout(()=>wrap.classList.remove('shake'), 350);
+  }
+
+  /* ---- render ---- */
+  function renderAllDayparts(){ rail.innerHTML=''; DAYPART_NAMES.forEach(n=>rail.appendChild(renderTicket(n))); }
+
+  function renderAll(){ setupTabs(); setupSettings(); setupFullscreen(); renderQuickForecast(); renderAllDayparts(); renderCateringSheet(); }
+
+  function renderTicket(name){
+    const dp=ensureDaypart(name);
+    const v=num(dp.sales);
+    const ticket=document.createElement('div'); ticket.className='ticket';
+
+    const nameEl=document.createElement('div'); nameEl.className='ticket-name'; nameEl.textContent=name; ticket.appendChild(nameEl);
+
+    const salesRow=document.createElement('div'); salesRow.className='sales-row';
+    salesRow.innerHTML='<span class="dollar">$</span><input class="sales-input" type="number" inputmode="decimal" min="0" step="1" placeholder="0" value="'+escapeHtml(dp.sales||'')+'" />';
+    ticket.appendChild(salesRow);
+
+    const resultsRow=document.createElement('div'); resultsRow.className='results';
+    resultsRow.innerHTML='<div class="result reg"><div class="value" data-role="reg">'+bagsRegular(v)+'</div><div class="label-txt">regular</div></div><div class="result spi"><div class="value" data-role="spi">'+bagsSpicy(v)+'</div><div class="label-txt">spicy</div></div>';
+    ticket.appendChild(resultsRow);
+
+    salesRow.querySelector('.sales-input').addEventListener('input',(e)=>{ dp.sales=e.target.value; const vv=num(e.target.value); resultsRow.querySelector('[data-role="reg"]').textContent=bagsRegular(vv); resultsRow.querySelector('[data-role="spi"]').textContent=bagsSpicy(vv); scheduleSave(); });
+
+    const div=document.createElement('div'); div.className='divider'; ticket.appendChild(div);
+    const sw=document.createElement('div'); ticket.appendChild(sw); renderMainSignoff(sw,name);
+    const ew=document.createElement('div'); ew.className='extra-block'; ticket.appendChild(ew); renderExtraBlock(ew,name);
+    return ticket;
+  }
+
+  function renderMainSignoff(wrap,name){
+    const dp=ensureDaypart(name);
+    if (dp.confirmed){
+      wrap.innerHTML='<div class="confirmed-state"><div class="txt">✓ '+escapeHtml(dp.confirmed.name)+' confirmed correct amount <span class="when">· '+fmtTime(dp.confirmed.time)+'</span></div><button class="change-link">Change</button></div>';
+      wrap.querySelector('.change-link').addEventListener('click',()=>{ dp.confirmed=null; renderMainSignoff(wrap,name); scheduleSave(); });
+      return;
+    }
+    wrap.innerHTML='<div class="sub-label">Sign off — I took the correct amount</div><div class="signoff-row"><div class="mini-field"><input type="text" class="signoffName" placeholder="Initials" maxlength="6" value="'+escapeHtml(dp.pendingName||'')+'" /></div><button class="confirm-btn">Confirm</button></div>';
+    const sn=wrap.querySelector('.signoffName');
+    sn.addEventListener('input',(e)=>{ dp.pendingName=e.target.value; scheduleSave(); });
+    const confirmMain=()=>{
+      clearInvalid(wrap);
+      const nv=sn.value.trim();
+      if (!nv){ markInvalid(sn); showFieldError(wrap,'Add your initials to confirm','.signoff-row'); sn.focus(); return; }
+      dp.confirmed={name:nv,time:Date.now()}; delete dp.pendingName;
+      renderMainSignoff(wrap,name); scheduleSave();
+      const vv=num(dp.sales);
+      logToCompliance({daypart:name,type:'Pickup',name:nv,regularBags:bagsRegular(vv),spicyBags:bagsSpicy(vv),reason:''});
+    };
+    wrap.querySelector('.confirm-btn').addEventListener('click',confirmMain);
+    sn.addEventListener('keydown',(e)=>{ if(e.key==='Enter'){ e.preventDefault(); confirmMain(); } });
+  }
+
+  function renderExtraBlock(wrap,name){
+    const dp=ensureDaypart(name);
+    if (!dp.extras) dp.extras=[];
+
+    const entriesHtml=dp.extras.map((entry,idx)=>{
+      const parts=[]; if(entry.reg>0)parts.push('+'+entry.reg+' regular'); if(entry.spi>0)parts.push('+'+entry.spi+' spicy');
+      return '<div class="confirmed-state" style="margin-bottom:6px;"><div class="txt">✓ '+escapeHtml(parts.join(' · '))+' confirmed by '+escapeHtml(entry.name)+'<span class="when"> · '+fmtTime(entry.time)+'</span>'+(entry.reason?'<span class="extra-note">'+escapeHtml(entry.reason)+'</span>':'')+'</div><button class="change-link remove-extra-btn" data-idx="'+idx+'">Remove</button></div>';
+    }).join('');
+
+    if (!dp.extraOpen){
+      wrap.innerHTML=entriesHtml+'<button class="toggle-link">'+(dp.extras.length?'+ Add another extra-bag entry':'+ Need more bags than allocated?')+'</button>';
+      wrap.querySelectorAll('.remove-extra-btn').forEach(btn=>btn.addEventListener('click',()=>{ dp.extras.splice(parseInt(btn.dataset.idx,10),1); renderExtraBlock(wrap,name); scheduleSave(); }));
+      wrap.querySelector('.toggle-link').addEventListener('click',()=>{ dp.extraOpen=true; renderExtraBlock(wrap,name); scheduleSave(); });
+      return;
+    }
+
+    const isOther=dp.reasonType==='Other';
+    wrap.innerHTML=entriesHtml+
+      '<div class="extra-head"><div class="sub-label">'+(dp.extras.length?'Add another entry':'Extra bags taken')+'</div><button class="collapse-link">Collapse</button></div>'+
+      '<div class="extra-grid">'+
+        '<div class="mini-field"><label>Extra regular</label><div class="stepper-row"><input type="number" inputmode="numeric" class="extraRegInput" min="0" step="1" placeholder="0" value="'+escapeHtml(dp.extraReg||'')+'" /><button type="button" class="stepper-btn" data-target="extraRegInput">+1</button></div></div>'+
+        '<div class="mini-field"><label>Extra spicy</label><div class="stepper-row"><input type="number" inputmode="numeric" class="extraSpiInput" min="0" step="1" placeholder="0" value="'+escapeHtml(dp.extraSpi||'')+'" /><button type="button" class="stepper-btn" data-target="extraSpiInput">+1</button></div></div>'+
+      '</div>'+
+      '<div class="reason-field"><label class="sub-label" style="margin-bottom:6px;">Reason</label><div class="reason-options">'+
+        REASON_OPTIONS.map(r=>'<button type="button" class="reason-chip '+(dp.reasonType===r?'active':'')+'" data-reason="'+escapeHtml(r)+'">'+escapeHtml(r)+'</button>').join('')+
+      '</div>'+(isOther?'<div class="mini-field"><input type="text" class="reasonCustomInput" placeholder="What happened?" value="'+escapeHtml(dp.reason||'')+'" /></div>':'')+'</div>'+
+      '<div class="sub-label">Sign off — extra bags taken</div>'+
+      '<div class="signoff-row"><div class="mini-field"><input type="text" class="extraSignoffName" placeholder="Initials" maxlength="6" value="'+escapeHtml(dp.extraPendingName||'')+'" /></div><button class="confirm-btn">Confirm</button></div>';
+
+    wrap.querySelectorAll('.remove-extra-btn').forEach(btn=>btn.addEventListener('click',()=>{ dp.extras.splice(parseInt(btn.dataset.idx,10),1); renderExtraBlock(wrap,name); scheduleSave(); }));
+    wrap.querySelector('.collapse-link').addEventListener('click',()=>{ dp.extraOpen=false; renderExtraBlock(wrap,name); scheduleSave(); });
+    wrap.querySelectorAll('.reason-chip').forEach(chip=>chip.addEventListener('click',()=>{ dp.reasonType=chip.dataset.reason; dp.reason=dp.reasonType==='Other'?'':dp.reasonType; renderExtraBlock(wrap,name); scheduleSave(); }));
+
+    const customInput=wrap.querySelector('.reasonCustomInput');
+    if (customInput){ customInput.addEventListener('input',(e)=>{ dp.reason=e.target.value; scheduleSave(); }); customInput.focus(); }
+
+    const extraRegInput=wrap.querySelector('.extraRegInput');
+    const extraSpiInput=wrap.querySelector('.extraSpiInput');
+    const extraSignoffName=wrap.querySelector('.extraSignoffName');
+
+    extraRegInput.addEventListener('input',(e)=>{ dp.extraReg=e.target.value; scheduleSave(); });
+    extraSpiInput.addEventListener('input',(e)=>{ dp.extraSpi=e.target.value; scheduleSave(); });
+    extraSignoffName.addEventListener('input',(e)=>{ dp.extraPendingName=e.target.value; scheduleSave(); });
+
+    wrap.querySelectorAll('.stepper-btn').forEach(btn=>btn.addEventListener('click',()=>{ const t=wrap.querySelector('.'+btn.dataset.target); if(!t)return; t.value=(parseInt(t.value,10)||0)+1; t.dispatchEvent(new Event('input',{bubbles:true})); }));
+
+    const confirmExtra=()=>{
+      const nv=extraSignoffName.value.trim();
+      const r=parseInt(extraRegInput.value,10)||0;
+      const s=parseInt(extraSpiInput.value,10)||0;
+      clearInvalid(wrap);
+
+      if (r<=0&&s<=0){
+        markInvalid(extraRegInput); markInvalid(extraSpiInput);
+        showFieldError(wrap,'Enter how many extra bags you took','.extra-grid');
+        extraRegInput.focus(); return;
+      }
+      if (!dp.reasonType){
+        markInvalid(wrap.querySelector('.reason-options'));
+        showFieldError(wrap,'Pick a reason for the extra bags','.reason-options');
+        return;
+      }
+      if (dp.reasonType==='Other'&&!dp.reason){
+        if (customInput) markInvalid(customInput);
+        showFieldError(wrap,'Say what happened','.reason-field');
+        if (customInput) customInput.focus();
+        return;
+      }
+      if (!nv){
+        markInvalid(extraSignoffName);
+        showFieldError(wrap,'Add your initials to confirm','.signoff-row');
+        extraSignoffName.focus(); return;
+      }
+      const reasonText=dp.reason||'';
+      dp.extras.push({reg:r,spi:s,reason:reasonText,name:nv,time:Date.now()});
+      dp.extraReg=''; dp.extraSpi=''; dp.reasonType=''; dp.reason='';
+      delete dp.extraPendingName; dp.extraOpen=false;
+      renderExtraBlock(wrap,name); scheduleSave();
+      logToCompliance({daypart:name,type:'Extra',name:nv,regularBags:r,spicyBags:s,reason:reasonText});
+    };
+    wrap.querySelector('.confirm-btn').addEventListener('click',confirmExtra);
+    [extraRegInput,extraSpiInput,extraSignoffName,customInput].forEach(inp=>{
+      if (inp) inp.addEventListener('keydown',(e)=>{ if(e.key==='Enter'){ e.preventDefault(); confirmExtra(); } });
+    });
+  }
+
+  /* ---- quick forecast ---- */
+  function renderQuickForecast(){
+    const card=document.getElementById('quickForecastCard');
+    card.innerHTML='<div class="sales-row" style="margin-bottom:14px;"><span class="dollar">$</span><input class="sales-input" id="quickForecastInput" type="number" inputmode="decimal" min="0" step="1" placeholder="Enter forecasted sales" value="'+escapeHtml(caterState.quickForecast||'')+'" /></div><div class="results" style="margin-bottom:0;"><div class="result reg"><div class="value" id="quickReg">0</div><div class="label-txt">regular</div></div><div class="result spi"><div class="value" id="quickSpi">0</div><div class="label-txt">spicy</div></div></div>';
+    const input=document.getElementById('quickForecastInput');
+    const regEl=document.getElementById('quickReg'), spiEl=document.getElementById('quickSpi');
+    function recompute(){ const v=num(input.value); regEl.textContent=bagsRegular(v); spiEl.textContent=bagsSpicy(v); }
+    input.addEventListener('input',()=>{ caterState.quickForecast=input.value; recompute(); scheduleSave(); });
+    recompute();
+  }
+
+  /* ---- catering ---- */
+  function renderCateringSheet(){
+    caterGrid.innerHTML='';
+    caterGrid.appendChild(buildIndividualCard('Filet','filetSold','reg',CATER_USAGE.filet));
+    caterGrid.appendChild(buildIndividualCard('Spicy','spicySold','spi',CATER_USAGE.spicy));
+    caterGrid.appendChild(buildTrayCard('Nuggets','nuggets','reg',CATER_USAGE.nuggets,TRAY_SIZES.nuggets));
+    caterGrid.appendChild(buildTrayCard('Strips','strips','reg',CATER_USAGE.strips,TRAY_SIZES.strips));
+  }
+
+  function caterBags(units,usage){ return (units*usage*8).toFixed(1); }
+
+  function buildIndividualCard(label,stateKey,colorClass,usage){
+    const card=document.createElement('div'); card.className='cater-card';
+    card.innerHTML='<div class="cater-name">'+label+'</div><div class="cater-fields"><div class="mini-field"><label>Units sold</label><input type="number" class="caterInput" min="0" step="1" placeholder="0" value="'+escapeHtml(caterState[stateKey]||'')+'" /></div></div><div class="cater-result '+colorClass+'"><div class="value" data-role="bags">0.0</div><div class="label-txt">bags</div></div>';
+    const input=card.querySelector('.caterInput'), valueEl=card.querySelector('[data-role="bags"]');
+    function recompute(){ valueEl.textContent=caterBags(num(input.value),usage); }
+    input.addEventListener('input',()=>{ caterState[stateKey]=input.value; recompute(); scheduleSave(); });
+    recompute(); return card;
+  }
+
+  function buildTrayCard(label,prefix,colorClass,usage,sizes){
+    const card=document.createElement('div'); card.className='cater-card';
+    card.innerHTML='<div class="cater-name">'+label+'</div><div class="cater-fields"><div class="tray-grid">'+
+      '<div class="mini-field"><label>Small ('+sizes.sm+'ct)</label><input type="number" class="trayInput" data-size="sm" min="0" step="1" placeholder="0" value="'+escapeHtml(caterState[prefix+'Sm']||'')+'" /></div>'+
+      '<div class="mini-field"><label>Medium ('+sizes.md+'ct)</label><input type="number" class="trayInput" data-size="md" min="0" step="1" placeholder="0" value="'+escapeHtml(caterState[prefix+'Md']||'')+'" /></div>'+
+      '<div class="mini-field"><label>Large ('+sizes.lg+'ct)</label><input type="number" class="trayInput" data-size="lg" min="0" step="1" placeholder="0" value="'+escapeHtml(caterState[prefix+'Lg']||'')+'" /></div>'+
+      '<div class="mini-field"><label>Units (free entry)</label><input type="number" class="trayInput" data-size="units" min="0" step="1" placeholder="0" value="'+escapeHtml(caterState[prefix+'Units']||'')+'" /></div>'+
+    '</div></div><div class="cater-result '+colorClass+'"><div class="value" data-role="bags">0.0</div><div class="label-txt">bags</div></div>';
+    const inputs=card.querySelectorAll('.trayInput'), valueEl=card.querySelector('[data-role="bags"]');
+    function recompute(){ const sm=num(card.querySelector('[data-size="sm"]').value),md=num(card.querySelector('[data-size="md"]').value),lg=num(card.querySelector('[data-size="lg"]').value),units=num(card.querySelector('[data-size="units"]').value); valueEl.textContent=caterBags(sm*sizes.sm+md*sizes.md+lg*sizes.lg+units,usage); }
+    inputs.forEach(inp=>inp.addEventListener('input',()=>{ const sk=inp.dataset.size; caterState[prefix+(sk==='sm'?'Sm':sk==='md'?'Md':sk==='lg'?'Lg':'Units')]=inp.value; recompute(); scheduleSave(); }));
+    recompute(); return card;
+  }
+
+  /* ---- daily reset watcher ---- */
+  function checkAndResetIfNeeded(){
+    if (lastResetDate!==operatingDayStr()){ resetDailyData(); renderAllDayparts(); renderQuickForecast(); renderCateringSheet(); save(); syncForecast(); }
+  }
+
+  /* ---- init ---- */
+  load();
+  renderAll();
+  renderLastSynced();
+  requestWakeLock();
+  setInterval(checkAndResetIfNeeded, 60000);
 })();
 </script>
-
 </body>
 </html>
