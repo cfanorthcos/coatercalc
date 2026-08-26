@@ -24,6 +24,7 @@
   header{ margin-bottom:22px; display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:6px; }
   header h1{ font-family:'Poppins',sans-serif; font-weight:700; font-size:26px; margin:0; color:var(--ink); }
   header .sub{ font-size:13.5px; color:var(--ink-dim); font-weight:500; }
+  header .sub .version{ display:inline-block; background:var(--indigo-soft); color:var(--indigo-dark); font-size:11px; font-weight:700; padding:2px 7px; border-radius:999px; margin-left:6px; letter-spacing:0.02em; }
   .settings-btn{ background:var(--indigo-soft); border:none; color:var(--indigo-dark); font-size:12.5px; font-weight:600; padding:8px 13px; border-radius:10px; cursor:pointer; }
   .settings-btn:hover{ background:#E0E0FB; }
   .settings-panel{ background:var(--card); border-radius:14px; padding:16px; margin-bottom:20px; box-shadow:0 2px 14px rgba(46,43,77,0.06); display:none; }
@@ -133,25 +134,21 @@
   <header>
     <div>
       <h1>Coater Calc</h1>
-      <div class="sub">Bags needed by daypart</div>
+      <div class="sub">Bags needed by daypart <span class="version" id="versionLabel"></span></div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
       <button class="settings-btn" id="fullscreenBtn">⛶ Full screen</button>
       <button class="settings-btn" id="resetDayBtn">↻ Reset day</button>
-      <button class="settings-btn" id="settingsToggle">⚙ Sheet sync</button>
+      <button class="settings-btn" id="settingsToggle">⚙ Settings</button>
     </div>
   </header>
   <div class="settings-panel" id="settingsPanel">
-    <div class="field">
-      <label>Forecast CSV URL (NG Forecast, published to web)</label>
-      <input type="text" id="forecastUrlInput" placeholder="https://docs.google.com/spreadsheets/d/e/.../pub?output=csv" />
-    </div>
     <div class="field">
       <label>Compliance webhook URL (Apps Script web app)</label>
       <input type="text" id="complianceUrlInput" placeholder="https://script.google.com/macros/s/.../exec" />
     </div>
     <button class="settings-save" id="settingsSave">Save</button>
-    <div class="hint">Forecast URL pulls sales into the Daypart tab. Compliance URL logs every sign-off and extra-bag entry to your NG Compliance sheet automatically.</div>
+    <div class="hint">Daypart sales come from the forecast built into this app — no sheet connection needed. Compliance URL logs every sign-off and extra-bag entry to your NG Compliance sheet automatically.</div>
   </div>
   <div class="tabs">
     <button class="tab-btn active" data-tab="daypart">Daypart forecast</button>
@@ -160,7 +157,7 @@
   </div>
   <div class="tab-panel active" data-panel="daypart">
     <div class="sync-row">
-      <button class="sync-btn" id="syncBtn">↻ Sync forecast from sheet</button>
+      <button class="sync-btn" id="syncBtn">↻ Reload today's forecast</button>
       <div class="sync-status" id="syncStatus"></div>
     </div>
     <div class="last-synced" id="lastSyncedLabel"></div>
@@ -177,6 +174,20 @@
 </div>
 <script>
 (function(){
+  const APP_VERSION = 'v1.1.0';
+
+  /* ---- hardcoded daypart forecast (from NG Coater Calculator 2.0) ----
+     Keyed by operating day, YYYY-MM-DD. Update these numbers when the
+     week's forecast changes. */
+  const FORECAST = {
+    '2026-08-24': { Breakfast:3500, Lunch:10500, Afternoon:5000, Dinner:10500 },
+    '2026-08-25': { Breakfast:3500, Lunch:10000, Afternoon:5000, Dinner:10000 },
+    '2026-08-26': { Breakfast:4500, Lunch:10500, Afternoon:5500, Dinner:11000 },
+    '2026-08-27': { Breakfast:4000, Lunch:11000, Afternoon:5000, Dinner:11000 },
+    '2026-08-28': { Breakfast:5000, Lunch:12000, Afternoon:6000, Dinner:12000 },
+    '2026-08-29': { Breakfast:6000, Lunch:12000, Afternoon:6000, Dinner:11000 }
+  };
+
   const REG_DIV = 1483;
   const SPI_DIV = 5592;
   const STORAGE_KEY = 'coater_state_v16';
@@ -190,7 +201,7 @@
 
   let state = {};
   let caterState = { quickForecast:'', filetSold:'', spicySold:'', nuggetsSm:'', nuggetsMd:'', nuggetsLg:'', nuggetsUnits:'', stripsSm:'', stripsMd:'', stripsLg:'', stripsUnits:'' };
-  let settings = { forecastUrl:'', complianceUrl:'' };
+  let settings = { complianceUrl:'' };
   let lastResetDate = '';
   let lastSyncedAt = null;
   let saveTimer = null;
@@ -258,39 +269,40 @@
     saveTimer = setTimeout(save, 400);
   }
 
-  /* ---- CSV + forecast sync ---- */
-  function parseCsv(text){
-    const rows = []; let row=[], field='', inQuotes=false;
-    for (let i=0; i<text.length; i++){
-      const c=text[i];
-      if (inQuotes){ if (c==='"'){ if (text[i+1]==='"'){field+='"';i++;} else {inQuotes=false;} } else {field+=c;} }
-      else { if (c==='"'){inQuotes=true;} else if (c===','){row.push(field);field='';} else if (c==='\n'||c==='\r'){ if(c==='\r'&&text[i+1]==='\n')i++; row.push(field);field='';rows.push(row);row=[]; } else {field+=c;} }
-    }
-    if (field.length||row.length){row.push(field);rows.push(row);}
-    return rows.filter(r=>r.length&&r.some(c=>c.trim()!==''));
-  }
-
+  /* ---- forecast (hardcoded, no network) ---- */
   function moneyToNumber(str){ const n=parseFloat(String(str||'').replace(/[^0-9.\-]/g,'')); return isFinite(n)?n:0; }
+
+  function forecastDateLabel(dayStr){
+    const parts=String(dayStr).split('-');
+    const d=new Date(+parts[0], +parts[1]-1, +parts[2]);
+    return d.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'});
+  }
 
   function renderLastSynced(){
     const el=document.getElementById('lastSyncedLabel');
-    if (el) el.textContent = lastSyncedAt ? 'Last synced '+fmtTime(lastSyncedAt) : 'Not synced yet';
+    if (!el) return;
+    const day=operatingDayStr();
+    el.textContent = FORECAST[day]
+      ? 'Forecast for '+forecastDateLabel(day)+(lastSyncedAt?' · loaded '+fmtTime(lastSyncedAt):'')
+      : 'No forecast on file for '+forecastDateLabel(day);
   }
 
-  async function syncForecast(){
+  function syncForecast(){
     const statusEl=document.getElementById('syncStatus');
-    if (!settings.forecastUrl){ if(statusEl){statusEl.textContent='Add a forecast URL in Sheet sync settings first';statusEl.className='sync-status error';} return; }
-    if (statusEl){statusEl.textContent='Syncing…';statusEl.className='sync-status';}
-    try{
-      const res=await fetch(settings.forecastUrl);
-      if (!res.ok) throw new Error('failed');
-      const rows=parseCsv(await res.text());
-      let matched=0;
-      rows.forEach(r=>{ const dpName=(r[0]||'').trim(); const match=DAYPART_NAMES.find(n=>n.toLowerCase()===dpName.toLowerCase()); if(match){ensureDaypart(match).sales=String(moneyToNumber(r[1]));matched++;} });
-      renderAllDayparts();
-      lastSyncedAt=Date.now(); renderLastSynced(); save();
-      if(statusEl){statusEl.textContent=matched?'Synced '+matched+' daypart'+(matched===1?'':'s')+' just now':'No matching daypart names found'; statusEl.className=matched?'sync-status success':'sync-status error';}
-    }catch(e){ if(statusEl){statusEl.textContent="Couldn't reach the sheet — check the URL and sharing settings";statusEl.className='sync-status error';} }
+    const day=operatingDayStr();
+    const row=FORECAST[day];
+    if (!row){
+      renderAllDayparts(); renderLastSynced();
+      if (statusEl){ statusEl.textContent='No forecast for today — enter sales by hand'; statusEl.className='sync-status error'; }
+      return;
+    }
+    let matched=0;
+    DAYPART_NAMES.forEach(name=>{
+      if (typeof row[name] === 'number'){ ensureDaypart(name).sales=String(row[name]); matched++; }
+    });
+    renderAllDayparts();
+    lastSyncedAt=Date.now(); renderLastSynced(); save();
+    if (statusEl){ statusEl.textContent='Loaded '+matched+' daypart'+(matched===1?'':'s'); statusEl.className='sync-status success'; }
   }
 
   function logToCompliance(payload){
@@ -321,12 +333,10 @@
   function setupSettings(){
     const toggle=document.getElementById('settingsToggle');
     const panel=document.getElementById('settingsPanel');
-    const fIn=document.getElementById('forecastUrlInput');
     const cIn=document.getElementById('complianceUrlInput');
-    fIn.value=settings.forecastUrl||'';
     cIn.value=settings.complianceUrl||'';
     toggle.addEventListener('click',()=>panel.classList.toggle('open'));
-    document.getElementById('settingsSave').addEventListener('click',()=>{ settings.forecastUrl=fIn.value.trim(); settings.complianceUrl=cIn.value.trim(); save(); panel.classList.remove('open'); });
+    document.getElementById('settingsSave').addEventListener('click',()=>{ settings.complianceUrl=cIn.value.trim(); save(); panel.classList.remove('open'); });
     document.getElementById('syncBtn').addEventListener('click',syncForecast);
     document.getElementById('resetDayBtn').addEventListener('click',()=>{ if(!window.confirm('Reset all sales, sign-offs, and extra-bag entries for today? This cannot be undone.'))return; resetDailyData(); renderAllDayparts(); renderQuickForecast(); renderCateringSheet(); save(); syncForecast(); });
   }
@@ -553,8 +563,11 @@
   }
 
   /* ---- init ---- */
+  const versionEl=document.getElementById('versionLabel');
+  if (versionEl) versionEl.textContent=APP_VERSION;
   load();
   renderAll();
+  if (!lastSyncedAt) syncForecast();
   renderLastSynced();
   requestWakeLock();
   setInterval(checkAndResetIfNeeded, 60000);
