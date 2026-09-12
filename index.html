@@ -33,6 +33,10 @@
   .settings-panel label{ display:block; font-size:11.5px; font-weight:600; color:var(--ink-dim); margin-bottom:5px; }
   .settings-panel input[type="text"]{ width:100%; background:var(--bg); border:none; border-radius:10px; padding:9px 11px; font-family:'Inter',sans-serif; font-size:13.5px; color:var(--ink); }
   .settings-panel input:focus-visible{ outline:2px solid var(--indigo); outline-offset:1px; }
+  .settings-panel .diag{ font-size:11.5px; line-height:1.6; color:var(--ink-dim); margin-top:10px; word-break:break-word; }
+  .settings-panel .diag .bad{ color:var(--coral-text); font-weight:600; }
+  .settings-panel .diag .good{ color:var(--green-text); font-weight:600; }
+  .settings-panel .diag div{ margin-bottom:6px; }
   .settings-panel .hint{ font-size:11.5px; color:var(--ink-dim); margin-top:8px; line-height:1.5; }
   .settings-save{ background:var(--indigo); color:#fff; border:none; font-weight:600; font-size:13px; padding:9px 16px; border-radius:10px; cursor:pointer; margin-top:4px; }
   .settings-save:hover{ background:var(--indigo-dark); }
@@ -151,8 +155,12 @@
       <label>Compliance webhook URL (Apps Script web app)</label>
       <input type="text" id="complianceUrlInput" placeholder="https://script.google.com/macros/s/.../exec" />
     </div>
-    <button class="settings-save" id="settingsSave">Save</button>
-    <div class="hint">Daypart sales are read from the published forecast sheet every time the app opens and at the start of each day — update the sheet and the tablet follows. Leave the forecast URL blank to use the built-in link. If the sheet can't be reached, the last numbers read are used. Compliance URL logs every sign-off and extra-bag entry to your NG Compliance sheet automatically.</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+      <button class="settings-save" id="settingsSave">Save</button>
+      <button class="settings-btn" id="forecastTestBtn">Test sheet connection</button>
+    </div>
+    <div class="diag" id="forecastDiag"></div>
+    <div class="hint">If the forecast won't load, tap <strong>Test sheet connection</strong> — it shows which ways of reading the sheet work. Daypart sales are read from the published forecast sheet every time the app opens and at the start of each day — update the sheet and the tablet follows. Leave the forecast URL blank to use the built-in link. If the sheet can't be reached, the last numbers read are used. Compliance URL logs every sign-off and extra-bag entry to your NG Compliance sheet automatically.</div>
   </div>
   <div class="tabs">
     <button class="tab-btn active" data-tab="daypart">Daypart forecast</button>
@@ -178,7 +186,7 @@
 </div>
 <script>
 (function(){
-  const APP_VERSION = 'v1.2.0';
+  const APP_VERSION = 'v1.3.0';
 
   /* ---- live forecast source ----
      Published "NG Coater Calculator 2.0" tab, read as CSV. Any publish-to-web
@@ -186,6 +194,9 @@
      Re-read on every load, on the Reload button, and at each day rollover. */
   const DEFAULT_FORECAST_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQxLpWL9qPe2VzW1ePMGsB2k87iyD2J-dgxq92S93oX8iB9wIkxNYl44L7q30grUJoEqT3FIYhBkFlD/pubhtml?gid=0&single=true';
   const FORECAST_MAX_AGE_MS = 30*60*1000;
+  /* Same workbook, used for the gviz CSV endpoint when the published link is
+     blocked. Needs the sheet shared "anyone with the link can view". */
+  const FORECAST_FILE_ID = '1nelaTqArdP5YoiF6g7TKbM9RacPnHetL9_7GJxnpVAM';
 
   /* ---- offline backup forecast ----
      Only used when the sheet can't be reached and nothing is cached.
@@ -213,7 +224,9 @@
   let state = {};
   let caterState = { quickForecast:'', filetSold:'', spicySold:'', nuggetsSm:'', nuggetsMd:'', nuggetsLg:'', nuggetsUnits:'', stripsSm:'', stripsMd:'', stripsLg:'', stripsUnits:'' };
   let settings = { complianceUrl:'', forecastUrl:'' };
-  let remoteForecast = { rows:{}, sheetDay:'', fetchedAt:null };
+  let remoteForecast = { rows:{}, sheetDay:'', fetchedAt:null, via:'' };
+  let forecastDiagnostics = [];
+  let syncPromise = null;
   let lastResetDate = '';
   let lastSyncedAt = null;
   let saveTimer = null;
@@ -317,18 +330,40 @@
     return '';
   }
 
-  /* Turn any Google Sheets link into a CSV endpoint. */
-  function forecastCsvUrl(){
-    let url=String(settings.forecastUrl||DEFAULT_FORECAST_URL).trim();
-    if (!url) return '';
-    const edit=url.match(/\/spreadsheets\/d\/([A-Za-z0-9-_]{20,})\//);
-    if (edit && url.indexOf('/d/e/')===-1){
-      const gid=(url.match(/[#&?]gid=(\d+)/)||[])[1]||'0';
-      return 'https://docs.google.com/spreadsheets/d/'+edit[1]+'/gviz/tq?tqx=out:csv&gid='+gid;
+  /* Ways to read the sheet, tried in order. Google serves published sheets and
+     gviz from different hosts with different CORS behaviour, so if one is
+     refused the next may still work; the Apps Script web app always works but
+     needs the doGet in apps-script/forecast-proxy.gs installed. */
+  function gvizUrl(id,gid){ return 'https://docs.google.com/spreadsheets/d/'+id+'/gviz/tq?tqx=out:csv&gid='+gid; }
+
+  function forecastSources(){
+    const raw=String(settings.forecastUrl||DEFAULT_FORECAST_URL).trim();
+    const gid=(raw.match(/[#&?]gid=(\d+)/)||[])[1]||'0';
+    const list=[];
+    let fileId='';
+    if (raw){
+      const found=raw.match(/\/spreadsheets\/d\/(?!e\/)([A-Za-z0-9-_]{20,})/);
+      if (found) fileId=found[1];
+      if (raw.indexOf('/d/e/')>=0 || /[?&]output=csv/.test(raw)){
+        let pub=raw.replace('/pubhtml','/pub');
+        if (!/[?&]output=csv/.test(pub)) pub+=(pub.indexOf('?')===-1?'?':'&')+'output=csv';
+        list.push({ label:'Published CSV', url:pub });
+      }
     }
-    url=url.replace('/pubhtml','/pub');
-    if (!/[?&]output=csv/.test(url)) url+=(url.indexOf('?')===-1?'?':'&')+'output=csv';
-    return url;
+    const id=fileId||FORECAST_FILE_ID;
+    if (id) list.push({ label:'Sheet CSV (gviz)', url:gvizUrl(id,gid) });
+    if (settings.complianceUrl){
+      const base=settings.complianceUrl.trim();
+      list.push({ label:'Apps Script', url:base+(base.indexOf('?')===-1?'?':'&')+'forecast=1' });
+    }
+    return list;
+  }
+
+  function describeFetchError(err){
+    const msg=String((err&&err.message)||err||'');
+    if (!msg) return 'unknown error';
+    if (/Failed to fetch|Load failed|NetworkError|TypeError/i.test(msg)) return 'blocked by browser (CORS) or offline';
+    return msg;
   }
 
   function parseCsv(text){
@@ -399,21 +434,60 @@
     return null;
   }
 
-  function fetchRemoteForecast(){
-    const url=forecastCsvUrl();
-    if (!url) return Promise.reject(new Error('no forecast URL'));
-    const bust=url+(url.indexOf('?')===-1?'?':'&')+'_cb='+Date.now();
-    return fetch(bust,{ cache:'no-store' }).then(res=>{
+  function parseForecastJson(text){
+    let data;
+    try{ data=JSON.parse(text); }catch(err){ return null; }
+    const rowsIn=(data && data.rows) || data;
+    if (!rowsIn || typeof rowsIn!=='object') return null;
+    const out={};
+    Object.keys(rowsIn).forEach(key=>{
+      const day=parseSheetDate(key);
+      const row=rowsIn[key];
+      if (!day || !row || typeof row!=='object') return;
+      const entry={}; let got=0;
+      DAYPART_NAMES.forEach(name=>{ const v=moneyToNumber(row[name]); if (v>0){ entry[name]=v; got++; } });
+      if (got) out[day]=entry;
+    });
+    return Object.keys(out).length ? { rows:out, sheetDay:(data&&data.sheetDay)||'' } : null;
+  }
+
+  function fetchForecastFrom(src){
+    const url=src.url+(src.url.indexOf('?')===-1?'?':'&')+'_cb='+Date.now();
+    return fetch(url,{ cache:'no-store' }).then(res=>{
       if (!res.ok) throw new Error('HTTP '+res.status);
       return res.text();
     }).then(text=>{
-      if (/^\s*</.test(text)) throw new Error('sheet did not return CSV — check that it is published to the web');
-      const parsed=parseForecastCsv(text);
-      if (!parsed || !Object.keys(parsed.rows).length) throw new Error('no daypart rows found in sheet');
-      remoteForecast={ rows:parsed.rows, sheetDay:parsed.sheetDay, fetchedAt:Date.now() };
-      save();
-      return remoteForecast;
+      const body=String(text||'').replace(/^\uFEFF/,'').trim();
+      if (!body) throw new Error('empty response');
+      if (body.charAt(0)==='<') throw new Error('got a web page, not CSV \u2014 check the tab is published');
+      const parsed=(body.charAt(0)==='{'||body.charAt(0)==='[') ? parseForecastJson(body) : parseForecastCsv(body);
+      if (!parsed || !Object.keys(parsed.rows).length) throw new Error('no daypart rows found');
+      return parsed;
     });
+  }
+
+  function fetchRemoteForecast(){
+    const sources=forecastSources();
+    forecastDiagnostics=[];
+    if (!sources.length) return Promise.reject(new Error('no forecast URL set'));
+    let i=0;
+    function attempt(){
+      if (i>=sources.length){
+        const first=forecastDiagnostics[0];
+        return Promise.reject(new Error(first?first.detail:'no forecast source'));
+      }
+      const src=sources[i++];
+      return fetchForecastFrom(src).then(parsed=>{
+        forecastDiagnostics.push({ label:src.label, ok:true, detail:Object.keys(parsed.rows).length+' day(s) read' });
+        remoteForecast={ rows:parsed.rows, sheetDay:parsed.sheetDay, fetchedAt:Date.now(), via:src.label };
+        save();
+        return remoteForecast;
+      }).catch(err=>{
+        forecastDiagnostics.push({ label:src.label, ok:false, detail:describeFetchError(err) });
+        return attempt();
+      });
+    }
+    return attempt();
   }
 
   function forecastDateLabel(dayStrVal){
@@ -474,20 +548,38 @@
       let msg;
       if (live) msg='Loaded '+applied+' daypart'+(applied===1?'':'s');
       else if (sheetRow) msg='Can\u2019t reach sheet \u2014 using numbers read '+fmtTime(remoteForecast.fetchedAt||Date.now());
-      else msg='Can\u2019t reach sheet \u2014 using built-in backup';
+      else msg='Can\u2019t reach sheet ('+describeFetchError(info.error)+') \u2014 using built-in backup';
       if (kept) msg+=' \u00b7 kept '+kept+' set by hand';
       statusEl.textContent=msg;
       statusEl.className='sync-status '+(live?'success':'error');
     }
   }
 
+  function renderForecastDiagnostics(){
+    const out=document.getElementById('forecastDiag');
+    if (!out || !forecastDiagnostics.length) return;
+    out.innerHTML=forecastDiagnostics.map(d=>'<div><span class="'+(d.ok?'good':'bad')+'">'+(d.ok?'\u2713':'\u2715')+' '+
+      escapeHtml(d.label)+'</span> \u2014 '+escapeHtml(d.detail)+'</div>').join('');
+  }
+
+  /* Several things can ask for a sync at once (boot, day rollover, waking up).
+     They share one read of the sheet rather than each starting their own. */
   function syncForecast(opts){
     opts=opts||{};
     const statusEl=document.getElementById('syncStatus');
     if (statusEl && opts.manual){ statusEl.textContent='Checking sheet\u2026'; statusEl.className='sync-status'; }
-    return fetchRemoteForecast()
-      .then(()=>applyForecast({ manual:opts.manual }))
-      .catch(err=>{ console.warn('Forecast sheet unavailable', err); applyForecast({ manual:opts.manual, error:err }); });
+    if (!syncPromise){
+      syncPromise=fetchRemoteForecast()
+        .then(()=>({}), err=>({ error:err }))
+        .then(result=>{ syncPromise=null; return result; });
+    }
+    return syncPromise.then(result=>{
+      if (result.error){
+        console.warn('Forecast sheet unavailable', result.error, forecastDiagnostics);
+        renderForecastDiagnostics();
+      }
+      applyForecast({ manual:opts.manual, error:result.error });
+    });
   }
 
   function logToCompliance(payload){
@@ -533,6 +625,18 @@
       syncForecast({manual:true});
     });
     document.getElementById('syncBtn').addEventListener('click',()=>syncForecast({manual:true}));
+    document.getElementById('forecastTestBtn').addEventListener('click',()=>{
+      const out=document.getElementById('forecastDiag');
+      out.textContent='Testing\u2026';
+      Promise.all(forecastSources().map(src=>fetchForecastFrom(src)
+        .then(parsed=>({ src:src, ok:true, detail:Object.keys(parsed.rows).length+' day(s): '+Object.keys(parsed.rows).sort().join(', ') }))
+        .catch(err=>({ src:src, ok:false, detail:describeFetchError(err) }))
+      )).then(results=>{
+        out.innerHTML='<div>Page origin: '+escapeHtml(location.origin||'file://')+'</div>'+
+          results.map(r=>'<div><span class="'+(r.ok?'good':'bad')+'">'+(r.ok?'\u2713':'\u2715')+' '+escapeHtml(r.src.label)+'</span> \u2014 '+escapeHtml(r.detail)+
+            '<br><span style="opacity:.7">'+escapeHtml(r.src.url)+'</span></div>').join('');
+      });
+    });
     document.getElementById('resetDayBtn').addEventListener('click',()=>{ if(!window.confirm('Reset all sales, sign-offs, and extra-bag entries for today? This cannot be undone.'))return; resetDailyData(); renderAllDayparts(); renderQuickForecast(); renderCateringSheet(); save(); syncForecast({manual:true}); });
   }
 
