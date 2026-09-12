@@ -144,11 +144,15 @@
   </header>
   <div class="settings-panel" id="settingsPanel">
     <div class="field">
+      <label>Forecast sheet URL (published Google Sheet)</label>
+      <input type="text" id="forecastUrlInput" placeholder="https://docs.google.com/spreadsheets/d/e/.../pubhtml?gid=0&amp;single=true" />
+    </div>
+    <div class="field">
       <label>Compliance webhook URL (Apps Script web app)</label>
       <input type="text" id="complianceUrlInput" placeholder="https://script.google.com/macros/s/.../exec" />
     </div>
     <button class="settings-save" id="settingsSave">Save</button>
-    <div class="hint">Daypart sales come from the forecast built into this app — no sheet connection needed. Compliance URL logs every sign-off and extra-bag entry to your NG Compliance sheet automatically.</div>
+    <div class="hint">Daypart sales are read from the published forecast sheet every time the app opens and at the start of each day — update the sheet and the tablet follows. Leave the forecast URL blank to use the built-in link. If the sheet can't be reached, the last numbers read are used. Compliance URL logs every sign-off and extra-bag entry to your NG Compliance sheet automatically.</div>
   </div>
   <div class="tabs">
     <button class="tab-btn active" data-tab="daypart">Daypart forecast</button>
@@ -174,18 +178,25 @@
 </div>
 <script>
 (function(){
-  const APP_VERSION = 'v1.1.0';
+  const APP_VERSION = 'v1.2.0';
 
-  /* ---- hardcoded daypart forecast (from NG Coater Calculator 2.0) ----
-     Keyed by operating day, YYYY-MM-DD. Update these numbers when the
-     week's forecast changes. */
-  const FORECAST = {
-    '2026-08-24': { Breakfast:3500, Lunch:10500, Afternoon:5000, Dinner:10500 },
-    '2026-08-25': { Breakfast:3500, Lunch:10000, Afternoon:5000, Dinner:10000 },
-    '2026-08-26': { Breakfast:4500, Lunch:10500, Afternoon:5500, Dinner:11000 },
-    '2026-08-27': { Breakfast:4000, Lunch:11000, Afternoon:5000, Dinner:11000 },
-    '2026-08-28': { Breakfast:5000, Lunch:12000, Afternoon:6000, Dinner:12000 },
-    '2026-08-29': { Breakfast:6000, Lunch:12000, Afternoon:6000, Dinner:11000 }
+  /* ---- live forecast source ----
+     Published "NG Coater Calculator 2.0" tab, read as CSV. Any publish-to-web
+     link works: paste it in Settings and the app converts it to CSV itself.
+     Re-read on every load, on the Reload button, and at each day rollover. */
+  const DEFAULT_FORECAST_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQxLpWL9qPe2VzW1ePMGsB2k87iyD2J-dgxq92S93oX8iB9wIkxNYl44L7q30grUJoEqT3FIYhBkFlD/pubhtml?gid=0&single=true';
+  const FORECAST_MAX_AGE_MS = 30*60*1000;
+
+  /* ---- offline backup forecast ----
+     Only used when the sheet can't be reached and nothing is cached.
+     Keyed by operating day, YYYY-MM-DD. */
+  const FALLBACK_FORECAST = {
+    '2026-09-07': { Breakfast:5500, Lunch:11000, Afternoon:5000, Dinner:9000 },
+    '2026-09-08': { Breakfast:4000, Lunch:9000,  Afternoon:5000, Dinner:11000 },
+    '2026-09-09': { Breakfast:4000, Lunch:9500,  Afternoon:5500, Dinner:11500 },
+    '2026-09-10': { Breakfast:4000, Lunch:10000, Afternoon:5000, Dinner:11500 },
+    '2026-09-11': { Breakfast:5500, Lunch:11000, Afternoon:6500, Dinner:12500 },
+    '2026-09-12': { Breakfast:6000, Lunch:12000, Afternoon:7000, Dinner:10000 }
   };
 
   const REG_DIV = 1483;
@@ -201,7 +212,8 @@
 
   let state = {};
   let caterState = { quickForecast:'', filetSold:'', spicySold:'', nuggetsSm:'', nuggetsMd:'', nuggetsLg:'', nuggetsUnits:'', stripsSm:'', stripsMd:'', stripsLg:'', stripsUnits:'' };
-  let settings = { complianceUrl:'' };
+  let settings = { complianceUrl:'', forecastUrl:'' };
+  let remoteForecast = { rows:{}, sheetDay:'', fetchedAt:null };
   let lastResetDate = '';
   let lastSyncedAt = null;
   let saveTimer = null;
@@ -233,7 +245,7 @@
   /* ---- persistence: localStorage (works on GitHub Pages) ---- */
   function save(){
     try{
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ state, caterState, settings, lastResetDate, lastSyncedAt }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ state, caterState, settings, lastResetDate, lastSyncedAt, remoteForecast }));
       const banner=document.getElementById('saveErrorBanner');
       if (banner) banner.classList.remove('show');
     }catch(err){
@@ -254,6 +266,7 @@
           if (parsed.settings) settings = Object.assign(settings, parsed.settings);
           if (parsed.lastResetDate) lastResetDate = parsed.lastResetDate;
           if (parsed.lastSyncedAt) lastSyncedAt = parsed.lastSyncedAt;
+          if (parsed.remoteForecast && parsed.remoteForecast.rows) remoteForecast = Object.assign(remoteForecast, parsed.remoteForecast);
         }
       }
     }catch(err){ /* keep defaults */ }
@@ -269,40 +282,212 @@
     saveTimer = setTimeout(save, 400);
   }
 
-  /* ---- forecast (hardcoded, no network) ---- */
+  /* ---- forecast: read from the published sheet, fall back to cache ---- */
+  const MONTHS = { january:1, february:2, march:3, april:4, may:5, june:6, july:7, august:8, september:9, october:10, november:11, december:12,
+                   jan:1, feb:2, mar:3, apr:4, jun:6, jul:7, aug:8, sep:9, sept:9, oct:10, nov:11, dec:12 };
+
   function moneyToNumber(str){ const n=parseFloat(String(str||'').replace(/[^0-9.\-]/g,'')); return isFinite(n)?n:0; }
 
-  function forecastDateLabel(dayStr){
-    const parts=String(dayStr).split('-');
+  function dayStr(y,m,d){ return y+'-'+String(m).padStart(2,'0')+'-'+String(d).padStart(2,'0'); }
+
+  /* A bare "September 8" has no year — pick the year that lands nearest today. */
+  function nearestYear(month,day){
+    const p=getMountainParts(new Date());
+    const today=Date.UTC(p.year,p.month-1,p.day);
+    let best=p.year, bestDiff=Infinity;
+    [p.year-1,p.year,p.year+1].forEach(y=>{
+      const diff=Math.abs(Date.UTC(y,month-1,day)-today);
+      if (diff<bestDiff){ bestDiff=diff; best=y; }
+    });
+    return dayStr(best,month,day);
+  }
+
+  function parseSheetDate(raw){
+    const str=String(raw||'').trim();
+    if (!str) return '';
+    let m=str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+    if (m) return dayStr(+m[1],+m[2],+m[3]);
+    m=str.match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
+    if (m){ let y=+m[3]; if (y<100) y+=2000; return dayStr(y,+m[1],+m[2]); }
+    m=str.match(/([A-Za-z]{3,9})\s+(\d{1,2})(?:st|nd|rd|th)?(?:,\s*(\d{4}))?/);
+    if (m){
+      const mo=MONTHS[m[1].toLowerCase()];
+      if (mo) return m[3] ? dayStr(+m[3],mo,+m[2]) : nearestYear(mo,+m[2]);
+    }
+    return '';
+  }
+
+  /* Turn any Google Sheets link into a CSV endpoint. */
+  function forecastCsvUrl(){
+    let url=String(settings.forecastUrl||DEFAULT_FORECAST_URL).trim();
+    if (!url) return '';
+    const edit=url.match(/\/spreadsheets\/d\/([A-Za-z0-9-_]{20,})\//);
+    if (edit && url.indexOf('/d/e/')===-1){
+      const gid=(url.match(/[#&?]gid=(\d+)/)||[])[1]||'0';
+      return 'https://docs.google.com/spreadsheets/d/'+edit[1]+'/gviz/tq?tqx=out:csv&gid='+gid;
+    }
+    url=url.replace('/pubhtml','/pub');
+    if (!/[?&]output=csv/.test(url)) url+=(url.indexOf('?')===-1?'?':'&')+'output=csv';
+    return url;
+  }
+
+  function parseCsv(text){
+    const rows=[]; let row=[], cell='', quoted=false;
+    for (let i=0;i<text.length;i++){
+      const ch=text[i];
+      if (quoted){
+        if (ch==='"'){ if (text[i+1]==='"'){ cell+='"'; i++; } else quoted=false; }
+        else cell+=ch;
+      }
+      else if (ch==='"') quoted=true;
+      else if (ch===','){ row.push(cell); cell=''; }
+      else if (ch==='\n'){ row.push(cell); rows.push(row); row=[]; cell=''; }
+      else if (ch!=='\r') cell+=ch;
+    }
+    row.push(cell); rows.push(row);
+    return rows;
+  }
+
+  /* Handles both sheet layouts: a dated grid (Day | Breakfast | Lunch | ...)
+     and a single-day list (Daypart | Sales, with "Todays Date" nearby). */
+  function parseForecastCsv(text){
+    const rows=parseCsv(text);
+    const label=(cell)=>String(cell||'').trim().toLowerCase().replace(/[^a-z]/g,'');
+
+    for (let r=0;r<rows.length;r++){
+      const cols={};
+      rows[r].forEach((cell,i)=>{
+        const key=label(cell);
+        DAYPART_NAMES.forEach(name=>{ if (key===name.toLowerCase() && cols[name]===undefined) cols[name]=i; });
+      });
+      if (Object.keys(cols).length<DAYPART_NAMES.length) continue;
+      const firstCol=Math.min.apply(null, DAYPART_NAMES.map(n=>cols[n]));
+      const out={};
+      for (let d=r+1;d<rows.length;d++){
+        const row=rows[d]||[];
+        let day='';
+        for (let i=0;i<firstCol && !day;i++) day=parseSheetDate(row[i]);
+        if (!day) continue;
+        const entry={}; let got=0;
+        DAYPART_NAMES.forEach(name=>{ const v=moneyToNumber(row[cols[name]]); if (v>0){ entry[name]=v; got++; } });
+        if (got) out[day]=Object.assign(out[day]||{}, entry);
+      }
+      if (Object.keys(out).length) return { rows:out, sheetDay:'' };
+    }
+
+    let sheetDay='';
+    rows.forEach(row=>{
+      row.forEach((cell,i)=>{
+        if (sheetDay) return;
+        const key=label(cell);
+        if (key==='todaysdate' || key==='todaydate' || key==='date'){
+          for (let j=i+1;j<row.length && !sheetDay;j++) sheetDay=parseSheetDate(row[j]);
+        }
+      });
+    });
+    const entry={}; let got=0;
+    rows.forEach(row=>{
+      row.forEach((cell,i)=>{
+        const key=label(cell);
+        DAYPART_NAMES.forEach(name=>{
+          if (key!==name.toLowerCase() || entry[name]!==undefined) return;
+          for (let j=i+1;j<row.length;j++){ const v=moneyToNumber(row[j]); if (v>0){ entry[name]=v; got++; break; } }
+        });
+      });
+    });
+    if (got){ const out={}; out[sheetDay||operatingDayStr()]=entry; return { rows:out, sheetDay:sheetDay }; }
+    return null;
+  }
+
+  function fetchRemoteForecast(){
+    const url=forecastCsvUrl();
+    if (!url) return Promise.reject(new Error('no forecast URL'));
+    const bust=url+(url.indexOf('?')===-1?'?':'&')+'_cb='+Date.now();
+    return fetch(bust,{ cache:'no-store' }).then(res=>{
+      if (!res.ok) throw new Error('HTTP '+res.status);
+      return res.text();
+    }).then(text=>{
+      if (/^\s*</.test(text)) throw new Error('sheet did not return CSV — check that it is published to the web');
+      const parsed=parseForecastCsv(text);
+      if (!parsed || !Object.keys(parsed.rows).length) throw new Error('no daypart rows found in sheet');
+      remoteForecast={ rows:parsed.rows, sheetDay:parsed.sheetDay, fetchedAt:Date.now() };
+      save();
+      return remoteForecast;
+    });
+  }
+
+  function forecastDateLabel(dayStrVal){
+    const parts=String(dayStrVal).split('-');
     const d=new Date(+parts[0], +parts[1]-1, +parts[2]);
     return d.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'});
   }
+
+  function sheetRowFor(day){ return (remoteForecast.rows && remoteForecast.rows[day]) || null; }
 
   function renderLastSynced(){
     const el=document.getElementById('lastSyncedLabel');
     if (!el) return;
     const day=operatingDayStr();
-    el.textContent = FORECAST[day]
-      ? 'Forecast for '+forecastDateLabel(day)+(lastSyncedAt?' · loaded '+fmtTime(lastSyncedAt):'')
-      : 'No forecast on file for '+forecastDateLabel(day);
-  }
-
-  function syncForecast(){
-    const statusEl=document.getElementById('syncStatus');
-    const day=operatingDayStr();
-    const row=FORECAST[day];
-    if (!row){
-      renderAllDayparts(); renderLastSynced();
-      if (statusEl){ statusEl.textContent='No forecast for today — enter sales by hand'; statusEl.className='sync-status error'; }
+    const fromSheet=!!sheetRowFor(day);
+    if (!fromSheet && !FALLBACK_FORECAST[day]){
+      el.textContent='No forecast on file for '+forecastDateLabel(day);
       return;
     }
-    let matched=0;
+    el.textContent='Forecast for '+forecastDateLabel(day)+' \u00b7 '+(fromSheet?'from sheet':'built-in backup')+
+      (lastSyncedAt?' \u00b7 read '+fmtTime(lastSyncedAt):'');
+  }
+
+  /* Writes forecast sales into the tickets. An automatic refresh never
+     overwrites a signed-off daypart or a number someone typed by hand;
+     the Reload button overwrites everything except sign-offs. */
+  function applyForecast(info){
+    info=info||{};
+    const statusEl=document.getElementById('syncStatus');
+    const day=operatingDayStr();
+    const sheetRow=sheetRowFor(day);
+    const row=sheetRow||FALLBACK_FORECAST[day];
+    if (!row){
+      renderAllDayparts(); renderLastSynced();
+      if (statusEl){
+        statusEl.textContent=info.error
+          ? 'Can\u2019t reach the sheet \u2014 enter sales by hand'
+          : 'Sheet has no row for today \u2014 enter sales by hand';
+        statusEl.className='sync-status error';
+      }
+      return;
+    }
+    let applied=0, kept=0;
     DAYPART_NAMES.forEach(name=>{
-      if (typeof row[name] === 'number'){ ensureDaypart(name).sales=String(row[name]); matched++; }
+      const value=row[name];
+      if (typeof value!=='number') return;
+      const dp=ensureDaypart(name);
+      const next=String(value);
+      const untouched=!dp.sales || dp.sales===String(dp.autoSales||'');
+      if (dp.confirmed || (!info.manual && !untouched)){ if (dp.sales!==next) kept++; return; }
+      dp.sales=next; dp.autoSales=next; applied++;
     });
     renderAllDayparts();
-    lastSyncedAt=Date.now(); renderLastSynced(); save();
-    if (statusEl){ statusEl.textContent='Loaded '+matched+' daypart'+(matched===1?'':'s'); statusEl.className='sync-status success'; }
+    if (sheetRow) lastSyncedAt=remoteForecast.fetchedAt||Date.now();
+    renderLastSynced(); save();
+    if (statusEl){
+      const live=sheetRow&&!info.error;
+      let msg;
+      if (live) msg='Loaded '+applied+' daypart'+(applied===1?'':'s');
+      else if (sheetRow) msg='Can\u2019t reach sheet \u2014 using numbers read '+fmtTime(remoteForecast.fetchedAt||Date.now());
+      else msg='Can\u2019t reach sheet \u2014 using built-in backup';
+      if (kept) msg+=' \u00b7 kept '+kept+' set by hand';
+      statusEl.textContent=msg;
+      statusEl.className='sync-status '+(live?'success':'error');
+    }
+  }
+
+  function syncForecast(opts){
+    opts=opts||{};
+    const statusEl=document.getElementById('syncStatus');
+    if (statusEl && opts.manual){ statusEl.textContent='Checking sheet\u2026'; statusEl.className='sync-status'; }
+    return fetchRemoteForecast()
+      .then(()=>applyForecast({ manual:opts.manual }))
+      .catch(err=>{ console.warn('Forecast sheet unavailable', err); applyForecast({ manual:opts.manual, error:err }); });
   }
 
   function logToCompliance(payload){
@@ -334,11 +519,21 @@
     const toggle=document.getElementById('settingsToggle');
     const panel=document.getElementById('settingsPanel');
     const cIn=document.getElementById('complianceUrlInput');
+    const fIn=document.getElementById('forecastUrlInput');
     cIn.value=settings.complianceUrl||'';
+    fIn.value=settings.forecastUrl||'';
     toggle.addEventListener('click',()=>panel.classList.toggle('open'));
-    document.getElementById('settingsSave').addEventListener('click',()=>{ settings.complianceUrl=cIn.value.trim(); save(); panel.classList.remove('open'); });
-    document.getElementById('syncBtn').addEventListener('click',syncForecast);
-    document.getElementById('resetDayBtn').addEventListener('click',()=>{ if(!window.confirm('Reset all sales, sign-offs, and extra-bag entries for today? This cannot be undone.'))return; resetDailyData(); renderAllDayparts(); renderQuickForecast(); renderCateringSheet(); save(); syncForecast(); });
+    document.getElementById('settingsSave').addEventListener('click',()=>{
+      const nextForecastUrl=fIn.value.trim();
+      const changed=nextForecastUrl!==(settings.forecastUrl||'');
+      settings.complianceUrl=cIn.value.trim();
+      settings.forecastUrl=nextForecastUrl;
+      save(); panel.classList.remove('open');
+      if (changed){ remoteForecast={ rows:{}, sheetDay:'', fetchedAt:null }; }
+      syncForecast({manual:true});
+    });
+    document.getElementById('syncBtn').addEventListener('click',()=>syncForecast({manual:true}));
+    document.getElementById('resetDayBtn').addEventListener('click',()=>{ if(!window.confirm('Reset all sales, sign-offs, and extra-bag entries for today? This cannot be undone.'))return; resetDailyData(); renderAllDayparts(); renderQuickForecast(); renderCateringSheet(); save(); syncForecast({manual:true}); });
   }
 
   /* ---- tabs ---- */
@@ -349,7 +544,7 @@
 
   /* ---- daypart helpers ---- */
   function ensureDaypart(name){
-    if (!state[name]) state[name]={ sales:'', confirmed:null, extraReg:'', extraSpi:'', reasonType:'', reason:'', extraOpen:false, extras:[] };
+    if (!state[name]) state[name]={ sales:'', autoSales:'', confirmed:null, extraReg:'', extraSpi:'', reasonType:'', reason:'', extraOpen:false, extras:[] };
     if (!state[name].extras) state[name].extras=[];
     return state[name];
   }
@@ -567,8 +762,13 @@
   if (versionEl) versionEl.textContent=APP_VERSION;
   load();
   renderAll();
-  if (!lastSyncedAt) syncForecast();
+  syncForecast();
   renderLastSynced();
+  document.addEventListener('visibilitychange',()=>{
+    if (document.visibilityState!=='visible') return;
+    checkAndResetIfNeeded();
+    if (!remoteForecast.fetchedAt || Date.now()-remoteForecast.fetchedAt>FORECAST_MAX_AGE_MS) syncForecast();
+  });
   requestWakeLock();
   setInterval(checkAndResetIfNeeded, 60000);
 })();
